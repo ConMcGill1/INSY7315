@@ -39,32 +39,9 @@ namespace INSY7315.Pages
             return Page();
         }
 
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more information, see https://aka.ms/RazorPagesCRUD.
+
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
-            _context.Attach(Product).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProductExists(Product.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
             var existing = await _context.Products
     .Include(p => p.PriceHistory)
     .FirstOrDefaultAsync(p => p.Id == Product.Id);
@@ -74,7 +51,7 @@ namespace INSY7315.Pages
 
             if (existing.Price != Product.Price)
             {
-                _context.PriceHistories.Add(new INSY7315.Models.PriceHistory
+                _context.PriceHistories.Add(new PriceHistory
                 {
                     ProductId = existing.Id,
                     OldPrice = existing.Price,
@@ -92,11 +69,8 @@ namespace INSY7315.Pages
             await _context.SaveChangesAsync();
             return RedirectToPage("./Index");
 
-
-           
         }
-
-        private bool ProductExists(int id)
+            private bool ProductExists(int id)
         {
             return _context.Products.Any(e => e.Id == id);
         }

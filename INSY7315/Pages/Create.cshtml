@@ -11,40 +11,48 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form method="post">
+       
+        <form method="post" onsubmit="return window.__insy7315_sync.submitProductForm(event, 'create')">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
             <div class="form-group">
                 <span class="text-danger">*</span>
                 <label asp-for="Product.Name" class="control-label"></label>
                 <input asp-for="Product.Name" class="form-control" />
                 <span asp-validation-for="Product.Name" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="Product.Price" class="control-label"></label>
                 <input asp-for="Product.Price" class="form-control" />
                 <span asp-validation-for="Product.Price" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="Product.CreatedOn" class="control-label"></label>
                 <input asp-for="Product.CreatedOn" class="form-control" />
                 <span asp-validation-for="Product.CreatedOn" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <span class="text-danger">*</span>
                 <label asp-for="Product.Owner" class="control-label"></label>
                 <input asp-for="Product.Owner" class="form-control" />
                 <span asp-validation-for="Product.Owner" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="Product.Model" class="control-label"></label>
                 <input asp-for="Product.Model" class="form-control" />
                 <span asp-validation-for="Product.Model" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="Product.Category" class="control-label"></label>
                 <input asp-for="Product.Category" class="form-control" />
                 <span asp-validation-for="Product.Category" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>
@@ -57,5 +65,7 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

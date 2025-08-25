@@ -4,26 +4,27 @@ using Microsoft.EntityFrameworkCore;
 using INSY7315.Data;
 using INSY7315.Models;
 
-namespace INSY7315.Pages;
-
-public class HistoryModel : PageModel
+namespace INSY7315.Pages
 {
-    private readonly AppDbContext _ctx;
-    public HistoryModel(AppDbContext ctx) => _ctx = ctx;
-
-    public Product? Product { get; set; }
-    public IList<PriceHistory> History { get; set; } = new List<PriceHistory>();
-
-    public async Task<IActionResult> OnGetAsync(int id)
+    public class HistoryModel : PageModel
     {
-        Product = await _ctx.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
-        if (Product == null) return NotFound();
+        private readonly AppDbContext _ctx;
+        public HistoryModel(AppDbContext ctx) => _ctx = ctx;
 
-        History = await _ctx.PriceHistories.AsNoTracking()
-            .Where(h => h.ProductId == id)
-            .OrderByDescending(h => h.ChangedOn)
-            .ToListAsync();
+        public Product? Product { get; set; }
+        public IList<PriceHistory> History { get; set; } = new List<PriceHistory>();
 
-        return Page();
+        public async Task<IActionResult> OnGetAsync(int id)
+        {
+            Product = await _ctx.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+            if (Product == null) return NotFound();
+
+            History = await _ctx.PriceHistories.AsNoTracking()
+                .Where(h => h.ProductId == id)
+                .OrderByDescending(h => h.ChangedOn)
+                .ToListAsync();
+
+            return Page();
+        }
     }
 }

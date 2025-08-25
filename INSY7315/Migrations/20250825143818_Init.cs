@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace INSY7315.Migrations
 {
-    /// <inheritdoc />
+
     public partial class Init : Migration
     {
-        /// <inheritdoc />
+
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -62,7 +62,7 @@ namespace INSY7315.Migrations
                 columns: new[] { "Name", "Category", "Model" });
         }
 
-        /// <inheritdoc />
+       
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

@@ -7,7 +7,35 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/INSY7315.styles.css" asp-append-version="true" />
+    <link rel="manifest" href="~/manifest.webmanifest" />
+
 </head>
+<script>
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js'));
+}
+
+
+function updateOnlineUI(){
+  const banner = document.getElementById('offlineBanner');
+  if (banner) banner.style.display = navigator.onLine ? 'none' : 'block';
+
+  document.querySelectorAll('[data-requires-online]').forEach(el=>{
+    el.toggleAttribute('disabled', !navigator.onLine);
+    el.classList.toggle('disabled', !navigator.onLine);
+  });
+}
+window.addEventListener('online',  updateOnlineUI);
+window.addEventListener('offline', updateOnlineUI);
+document.addEventListener('DOMContentLoaded', updateOnlineUI);
+</script>
+
+<div id="offlineBanner" style="display:none;background:#ffc107;color:#000;padding:.5rem;text-align:center">
+  You are offline. Cached pages are available; actions are disabled or queued.
+</div>
+<script src="~/offline-sync.js"></script>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
