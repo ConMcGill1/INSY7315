@@ -39,3 +39,18 @@ Setup Instructions
    ```bash
    git clone [repo-url]
    cd [repo-folder]
+
+2. Update appsettings.json with your SQL Server connection string:
+   "ConnectionStrings": {
+    "DefaultConnection": "Server=YOUR_SERVER;Database=InventoryDB;Trusted_Connection=True;MultipleActiveResultSets=true"
+   }
+
+3. Run database migrations:
+   dotnet ef database update
+
+4. Run the application:
+  dotnet run
+
+5. Testing
+   Run unit tests:
+   dotnet test
