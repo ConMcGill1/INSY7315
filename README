@@ -1,0 +1,41 @@
+Inventory Management System (Sprint 5)
+
+Overview
+This project is an Inventory Management System built using ASP.NET Core MVC, Entity Framework Core, and SQL Server. It allows an electronics/furniture shop owner to manage products, track price history, and search/filter inventory efficiently.
+
+Features Implemented (Sprint 5)
+- Add new products (Name, Price, Owner, optional Model & Category)
+- View, edit, and delete products
+- Search products by Name, Category, or Model
+- Track price changes with a Price History table
+- Unit and integration tests for core functionality
+
+Technology Stack
+- ASP.NET Core
+- Entity Framework Core (Code-First)
+- SQL Server
+- Bootstrap 5 (for responsive UI)
+- xUnit/MSTest/NUnit (for testing)
+
+Database Structure
+ Products Table
+- Id (PK)
+- Name (nvarchar(200), required)
+- Owner (nvarchar(100), required)
+- Price (decimal(18,2))
+- Category (nvarchar(100), optional)
+- Model (nvarchar(100), optional)
+- CreatedOn (datetime2)
+
+ PriceHistories Table
+- Id (PK)
+- ProductId (FK to Products)
+- OldPrice (decimal(18,2))
+- NewPrice (decimal(18,2))
+- ChangedOn (datetime2)
+
+Setup Instructions
+1. Clone the repository:
+   ```bash
+   git clone [repo-url]
+   cd [repo-folder]
