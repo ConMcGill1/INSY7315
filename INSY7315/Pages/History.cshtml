@@ -1,0 +1,20 @@
+﻿@page "{id:int}"
+@model INSY7315.Pages.HistoryModel
+@{
+    ViewData["Title"] = "Price History";
+}
+<h2>Price history for @Model.Product!.Name</h2>
+<table class="table">
+    <thead><tr><th>Date</th><th>Old</th><th>New</th></tr></thead>
+    <tbody>
+        @foreach (var h in Model.History)
+        {
+            <tr>
+                <td>@h.ChangedOn.ToLocalTime()</td>
+                <td>@h.OldPrice</td>
+                <td>@h.NewPrice</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<a asp-page="./Index">Back to list</a>
