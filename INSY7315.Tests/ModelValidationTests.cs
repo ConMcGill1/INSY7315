@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using FluentAssertions;
-// TODO: change to your actual model namespace:
 using INSY7315.Models;
 using Xunit;
 
@@ -17,9 +16,9 @@ public class ModelValidationTests
     }
 
     [Fact]
-    public void Product_Required_And_Range_Validated()
+    public void Product_Required_And_Range_Attributes_Are_Enforced()
     {
-        var p = new Product { Name = "", Owner = "", Price = -1 };
+        var p = new Product { Name = "", Owner = "", Price = -1m };
         var results = Validate(p);
 
         results.Should().Contain(r => r.MemberNames.Contains(nameof(Product.Name)));
