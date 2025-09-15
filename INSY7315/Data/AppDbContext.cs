@@ -9,7 +9,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
-
+    public DbSet<Alert> Alerts => Set<Alert>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Product>()
