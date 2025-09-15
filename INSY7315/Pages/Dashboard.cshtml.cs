@@ -1,49 +1,48 @@
+using INSY7315.Data;
+using INSY7315.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using INSY7315.Data;
-using INSY7315.Models;
 
 namespace INSY7315.Pages
 {
-    public class CategoryStat
-    {
-        public string Category { get; set; } = "";
-        public int Count { get; set; }
-        public decimal Value { get; set; }
-    }
-
     [Authorize(Roles = "Owner,Admin")]
     public class DashboardModel : PageModel
     {
-        private readonly AppDbContext _ctx;
-        public DashboardModel(AppDbContext ctx) => _ctx = ctx;
+        private readonly AppDbContext _db;
+        public DashboardModel(AppDbContext db) => _db = db;
 
-        public int TotalProducts { get; set; }
-        public decimal TotalValue { get; set; }
-        public IList<CategoryStat> TopCategories { get; set; } = new List<CategoryStat>();
-        public IList<Alert> RecentAlerts { get; set; } = new List<Alert>();
+        public int TotalProducts { get; private set; }
+        public decimal TotalInventoryValue { get; private set; }
+        public List<Alert> RecentAlerts { get; private set; } = new();
+        public List<CategoryRow> TopCategories { get; private set; } = new();
 
-        public async Task OnGet()
+        public class CategoryRow
         {
-            TotalProducts = await _ctx.Products.CountAsync();
-            TotalValue = await _ctx.Products.SumAsync(p => (decimal?)p.Price) ?? 0m;
+            public string Category { get; set; } = string.Empty;
+            public int Count { get; set; }
+            public decimal Value { get; set; }
+        }
 
-            TopCategories = await _ctx.Products
-                .AsNoTracking()
+        public async Task OnGetAsync()
+        {
+            TotalProducts = await _db.Products.CountAsync();
+            TotalInventoryValue = await _db.Products.SumAsync(p => (decimal?)p.Price) ?? 0m;
+
+            RecentAlerts = await _db.Alerts.AsNoTracking()
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(10)
+                .ToListAsync();
+
+            TopCategories = await _db.Products.AsNoTracking()
                 .GroupBy(p => p.Category ?? "Uncategorized")
-                .Select(g => new CategoryStat
+                .Select(g => new CategoryRow
                 {
                     Category = g.Key,
                     Count = g.Count(),
-                    Value = g.Sum(x => x.Price)
+                    Value = g.Sum(p => p.Price)
                 })
                 .OrderByDescending(x => x.Count)
-                .Take(5)
-                .ToListAsync();
-
-            RecentAlerts = await _ctx.Alerts.AsNoTracking()
-                .OrderByDescending(a => a.CreatedAt)
                 .Take(5)
                 .ToListAsync();
         }

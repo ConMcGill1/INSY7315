@@ -5,6 +5,9 @@ namespace INSY7315.Data
 {
     public static class IdentitySeed
     {
+        private static readonly string[] SeedRoles = { "Admin", "Owner", "Employee" };
+        private static readonly string[] AdminRoleSet = { "Admin", "Owner" };
+
         public static async Task EnsureSeedAsync(IServiceProvider sp)
         {
             var env = sp.GetRequiredService<IHostEnvironment>();
@@ -12,18 +15,15 @@ namespace INSY7315.Data
 
             using var scope = sp.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            try { await db.Database.EnsureCreatedAsync(); } catch { /* ignore */ }
+            try { await db.Database.EnsureCreatedAsync(); } catch { }
 
             var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<INSY7315.Models.ApplicationUser>>();
 
-            
-            var roles = new[] { "Admin", "Owner", "Employee" };
-            foreach (var role in roles)
+            foreach (var role in SeedRoles)
                 if (!await roleMgr.RoleExistsAsync(role))
                     await roleMgr.CreateAsync(new IdentityRole(role));
 
-           
             var email = "admin@insy7315.local";
             var admin = await userMgr.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (admin == null)
@@ -35,7 +35,7 @@ namespace INSY7315.Data
                     EmailConfirmed = true
                 };
                 await userMgr.CreateAsync(admin, "Admin#12345");
-                await userMgr.AddToRolesAsync(admin, new[] { "Admin", "Owner" });
+                await userMgr.AddToRolesAsync(admin, AdminRoleSet);
             }
         }
     }
