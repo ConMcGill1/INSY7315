@@ -17,14 +17,18 @@ namespace INSY7315.Pages
         [BindProperty(SupportsGet = true)] public string? Category { get; set; }
         [BindProperty(SupportsGet = true)] public string? Model { get; set; }
 
-        
+      
+        [BindProperty(SupportsGet = true)] public decimal? MinPrice { get; set; }
+        [BindProperty(SupportsGet = true)] public decimal? MaxPrice { get; set; }
+        [BindProperty(SupportsGet = true)] public DateTime? CreatedFrom { get; set; }
+        [BindProperty(SupportsGet = true)] public DateTime? CreatedTo { get; set; }
+
         [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
         public int TotalPages { get; set; }
 
         public async Task OnGetAsync()
         {
             const int pageSize = 10;
-
             var query = _ctx.Products.AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(Q))
@@ -43,6 +47,11 @@ namespace INSY7315.Pages
 
             if (!string.IsNullOrWhiteSpace(Model))
                 query = query.Where(p => p.Model == Model);
+
+            if (MinPrice is not null) query = query.Where(p => p.Price >= MinPrice);
+            if (MaxPrice is not null) query = query.Where(p => p.Price <= MaxPrice);
+            if (CreatedFrom is not null) query = query.Where(p => p.CreatedOn >= CreatedFrom);
+            if (CreatedTo is not null) query = query.Where(p => p.CreatedOn <= CreatedTo);
 
             var count = await query.CountAsync();
             TotalPages = (int)Math.Ceiling(count / (double)pageSize);

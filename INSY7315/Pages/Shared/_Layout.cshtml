@@ -11,9 +11,13 @@
     <nav class="navbar navbar-expand navbar-dark bg-dark mb-3">
         <div class="container-fluid">
             <a class="navbar-brand" asp-page="/Index">Inventory</a>
-            <div class="navbar-nav">
+            <div class="navbar-nav me-auto">
                 <a class="nav-link" asp-page="/Create">Create</a>
                 <a class="nav-link" asp-page="/Export">Export CSV</a>
+                <a class="nav-link" asp-page="/Dashboard">Dashboard</a>
+            </div>
+            <div class="navbar-nav ms-auto">
+                <partial name="_LoginPartial" />
             </div>
         </div>
     </nav>

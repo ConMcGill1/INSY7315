@@ -7,17 +7,17 @@
 <h2>Products</h2>
 
 <form method="get" class="row g-2 mb-3">
-    <div class="col-md-4">
-        <input class="form-control" name="Q" value="@Model.Q" placeholder="Search..." />
-    </div>
-    <div class="col-md-3">
-        <input class="form-control" name="Category" value="@Model.Category" placeholder="Category" />
-    </div>
-    <div class="col-md-3">
-        <input class="form-control" name="Model" value="@Model.Model" placeholder="Model" />
-    </div>
-    <div class="col-md-2">
-        <button class="btn btn-primary w-100">Filter</button>
+    <div class="col-md-3"><input class="form-control" name="Q" value="@Model.Q" placeholder="Search text..." /></div>
+    <div class="col-md-2"><input class="form-control" name="Category" value="@Model.Category" placeholder="Category" /></div>
+    <div class="col-md-2"><input class="form-control" name="Model" value="@Model.Model" placeholder="Model" /></div>
+    <div class="col-md-2"><input class="form-control" type="number" step="0.01" name="MinPrice" value="@(Model.MinPrice?.ToString())" placeholder="Min price" /></div>
+    <div class="col-md-2"><input class="form-control" type="number" step="0.01" name="MaxPrice" value="@(Model.MaxPrice?.ToString())" placeholder="Max price" /></div>
+    <div class="col-md-2"><input class="form-control" type="date" name="CreatedFrom" value="@(Model.CreatedFrom?.ToString("yyyy-MM-dd"))" /></div>
+    <div class="col-md-2"><input class="form-control" type="date" name="CreatedTo" value="@(Model.CreatedTo?.ToString("yyyy-MM-dd"))" /></div>
+    <div class="col-md-2"><button class="btn btn-primary w-100">Filter</button></div>
+    <div class="col-md-4 text-end">
+        <a class="btn btn-outline-secondary me-2" href="/api/products/export.csv">CSV</a>
+        <a class="btn btn-outline-secondary" href="/api/products/export.pdf">PDF</a>
     </div>
 </form>
 
@@ -47,6 +47,8 @@
                     <a class="btn btn-sm btn-outline-secondary" asp-page="/Details" asp-route-id="@p.Id">Details</a>
                     <a class="btn btn-sm btn-outline-primary" asp-page="/Edit" asp-route-id="@p.Id">Edit</a>
                     <a class="btn btn-sm btn-outline-danger" asp-page="/Delete" asp-route-id="@p.Id">Delete</a>
+                    <a class="btn btn-sm btn-outline-dark" href="/api/products/@p.Id/history/export.csv">History CSV</a>
+                    <a class="btn btn-sm btn-outline-dark" href="/api/products/@p.Id/history/export.pdf">History PDF</a>
                 </td>
             </tr>
         }
@@ -61,7 +63,7 @@
             {
                 <li class="page-item @(i == Model.PageNumber ? "active" : "")">
                     <a class="page-link"
-                       href="?Q=@Model.Q&Category=@Model.Category&Model=@Model.Model&PageNumber=@i">@i</a>
+                       href="?Q=@Model.Q&Category=@Model.Category&Model=@Model.Model&MinPrice=@Model.MinPrice&MaxPrice=@Model.MaxPrice&CreatedFrom=@Model.CreatedFrom:yyyy-MM-dd&CreatedTo=@Model.CreatedTo:yyyy-MM-dd&PageNumber=@i">@i</a>
                 </li>
             }
         </ul>
