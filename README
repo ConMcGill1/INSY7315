@@ -1,24 +1,35 @@
-Inventory Management System (Sprint 5)
+# Inventory Management System (Core Three)
 
-Overview
-This project is an Inventory Management System built using ASP.NET Core MVC, Entity Framework Core, and SQL Server. It allows an electronics/furniture shop owner to manage products, track price history, and search/filter inventory efficiently.
+## Overview
+This project is an **Inventory Management System** built using **ASP.NET Core MVC**, **Entity Framework Core**, and **SQL Server**.  
+It allows an electronics/furniture shop owner to manage products, track price history, search/filter inventory efficiently, and now includes secondary features such as export and advanced search.
 
-Features Implemented (Sprint 5)
+## Features Implemented
+
+### Core Features (Sprint 5)
 - Add new products (Name, Price, Owner, optional Model & Category)
 - View, edit, and delete products
 - Search products by Name, Category, or Model
 - Track price changes with a Price History table
 - Unit and integration tests for core functionality
 
-Technology Stack
-- ASP.NET Core
-- Entity Framework Core (Code-First)
-- SQL Server
-- Bootstrap 5 (for responsive UI)
-- xUnit/MSTest/NUnit (for testing)
+### Secondary Features (Sprint 7)
+- Export product list or price history to **CSV/PDF**
+- Price change alerts (notifications when price exceeds a threshold)
+- Advanced search filters (by price range, date added, or category)
+- Authentication and role-based access (if implemented)
+- Regression testing of existing features
 
-Database Structure
- Products Table
+## Technology Stack
+- **ASP.NET Core MVC 8**
+- **Entity Framework Core (Code-First)**
+- **SQL Server**
+- **Bootstrap 5** (responsive UI)
+- **xUnit/MSTest/NUnit** (for unit/integration testing)
+
+## Database Structure
+
+**Products Table**
 - Id (PK)
 - Name (nvarchar(200), required)
 - Owner (nvarchar(100), required)
@@ -27,14 +38,15 @@ Database Structure
 - Model (nvarchar(100), optional)
 - CreatedOn (datetime2)
 
- PriceHistories Table
+**PriceHistories Table**
 - Id (PK)
 - ProductId (FK to Products)
 - OldPrice (decimal(18,2))
 - NewPrice (decimal(18,2))
 - ChangedOn (datetime2)
 
-Setup Instructions
+## Setup Instructions
+
 1. Clone the repository:
    ```bash
    git clone [repo-url]
@@ -54,3 +66,5 @@ Setup Instructions
 5. Testing
    Run unit tests:
    dotnet test
+
+
