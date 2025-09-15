@@ -1,79 +1,25 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - INSY7315</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/INSY7315.styles.css" asp-append-version="true" />
-    <link rel="manifest" href="~/manifest.webmanifest" />
-
+    <title>INSY7315</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
 </head>
-<script>
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js'));
-}
-
-
-function updateOnlineUI(){
-  const banner = document.getElementById('offlineBanner');
-  if (banner) banner.style.display = navigator.onLine ? 'none' : 'block';
-
-  document.querySelectorAll('[data-requires-online]').forEach(el=>{
-    el.toggleAttribute('disabled', !navigator.onLine);
-    el.classList.toggle('disabled', !navigator.onLine);
-  });
-}
-window.addEventListener('online',  updateOnlineUI);
-window.addEventListener('offline', updateOnlineUI);
-document.addEventListener('DOMContentLoaded', updateOnlineUI);
-</script>
-
-<div id="offlineBanner" style="display:none;background:#ffc107;color:#000;padding:.5rem;text-align:center">
-  You are offline. Cached pages are available; actions are disabled or queued.
-</div>
-<script src="~/offline-sync.js"></script>
-
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">INSY7315</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+    <nav class="navbar navbar-expand navbar-dark bg-dark mb-3">
+        <div class="container-fluid">
+            <a class="navbar-brand" asp-page="/Index">Inventory</a>
+            <div class="navbar-nav">
+                <a class="nav-link" asp-page="/Create">Create</a>
+                <a class="nav-link" asp-page="/Export">Export CSV</a>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - INSY7315 - <a asp-area="" asp-page="/Privacy">Privacy</a>
         </div>
-    </footer>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
-    @await RenderSectionAsync("Scripts", required: false)
+    </nav>
+    <main class="container">
+        @RenderBody()
+    </main>
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

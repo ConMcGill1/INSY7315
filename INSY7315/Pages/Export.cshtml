@@ -1,4 +1,10 @@
 ﻿@page
 @model INSY7315.Pages.ExportModel
 @{
+    ViewData["Title"] = "Export";
 }
+<h2>Export CSV</h2>
+<p>
+    Click to download:
+    <a class="btn btn-outline-primary" href="@Model.ExportUrl">products.csv</a>
+</p>

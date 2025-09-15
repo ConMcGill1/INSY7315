@@ -1,70 +1,69 @@
 ﻿@page
 @model INSY7315.Pages.IndexModel
-
 @{
     ViewData["Title"] = "Products";
 }
 
-<h1>Products</h1>
+<h2>Products</h2>
 
-<form method="get" class="mb-3">
-    <input type="text" name="Q" value="@Model.Q" placeholder="Search name/id/category/model" />
-    <input type="text" name="Category" value="@Model.Category" placeholder="Category" />
-    <input type="text" name="Model" value="@Model.Model" placeholder="Model" />
-    <button type="submit">Search</button>
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input class="form-control" name="Q" value="@Model.Q" placeholder="Search..." />
+    </div>
+    <div class="col-md-3">
+        <input class="form-control" name="Category" value="@Model.Category" placeholder="Category" />
+    </div>
+    <div class="col-md-3">
+        <input class="form-control" name="Model" value="@Model.Model" placeholder="Model" />
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100">Filter</button>
+    </div>
 </form>
 
-<p>
-    <a class="btn btn-primary" asp-page="./Create" data-requires-online>Create New</a>
-    <a class="btn btn-secondary" asp-page="./Export" data-requires-online>Export CSV</a>
-</p>
-
-@if (Model.TotalPages > 1)
-{
-    <nav aria-label="Page navigation" class="mb-2">
-        @for (var i = 1; i <= Model.TotalPages; i++)
-        {
-            <a asp-page="./Index"
-               asp-route-Q="@Model.Q"
-               asp-route-Category="@Model.Category"
-               asp-route-Model="@Model.Model"
-               asp-route-Page="@i">
-                @(i == Model.Page ? $"[{i}]" : i)
-            </a>
-            <span class="mx-1"></span>
-        }
-    </nav>
-}
-
-<table class="table">
+<table class="table table-striped">
     <thead>
         <tr>
-            <th>@Html.DisplayNameFor(m => m.Product[0].Name)</th>
-            <th>@Html.DisplayNameFor(m => m.Product[0].Price)</th>
-            <th>@Html.DisplayNameFor(m => m.Product[0].CreatedOn)</th>
-            <th>@Html.DisplayNameFor(m => m.Product[0].Owner)</th>
-            <th>@Html.DisplayNameFor(m => m.Product[0].Model)</th>
-            <th>@Html.DisplayNameFor(m => m.Product[0].Category)</th>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Owner</th>
+            <th>Category</th>
+            <th>Model</th>
+            <th>Price</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model.Product)
+        @foreach (var p in Model.Product)
         {
             <tr>
-                <td>@Html.DisplayFor(_ => item.Name)</td>
-                <td>@Html.DisplayFor(_ => item.Price)</td>
-                <td>@Html.DisplayFor(_ => item.CreatedOn)</td>
-                <td>@Html.DisplayFor(_ => item.Owner)</td>
-                <td>@Html.DisplayFor(_ => item.Model)</td>
-                <td>@Html.DisplayFor(_ => item.Category)</td>
-                <td>
-                    <a asp-page="./Edit" asp-route-id="@item.Id" data-requires-online>Edit</a> |
-                    <a asp-page="./Details" asp-route-id="@item.Id">Details</a> |
-                    <a asp-page="./Delete" asp-route-id="@item.Id" data-requires-online>Delete</a> |
-                    <a asp-page="./History" asp-route-id="@item.Id">History</a>
+                <td>@p.Id</td>
+                <td>@p.Name</td>
+                <td>@p.Owner</td>
+                <td>@p.Category</td>
+                <td>@p.Model</td>
+                <td>@p.Price</td>
+                <td class="text-nowrap">
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="/Details" asp-route-id="@p.Id">Details</a>
+                    <a class="btn btn-sm btn-outline-primary" asp-page="/Edit" asp-route-id="@p.Id">Edit</a>
+                    <a class="btn btn-sm btn-outline-danger" asp-page="/Delete" asp-route-id="@p.Id">Delete</a>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination">
+            @for (var i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link"
+                       href="?Q=@Model.Q&Category=@Model.Category&Model=@Model.Model&PageNumber=@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

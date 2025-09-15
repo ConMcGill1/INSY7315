@@ -16,14 +16,23 @@ namespace INSY7315.Services
             _thresholdPercent = thresholdPercent;
         }
 
-        public async Task MaybeCreateAlertAsync(decimal oldPrice, Product after)
+        /// <summary>
+        /// Create an Alert if price delta >= threshold. Assumes caller adds PriceHistory entry separately.
+        /// </summary>
+        public async Task HandlePriceChangeAsync(Product after, decimal oldPrice)
         {
-            if (oldPrice <= 0) return;
+            // Old price 0 → avoid division by zero; treat as 100% increase if new > 0
+            decimal pct;
+            if (oldPrice == 0m)
+            {
+                pct = after.Price == 0m ? 0m : 100m;
+            }
+            else
+            {
+                pct = ((after.Price - oldPrice) / oldPrice) * 100m;
+            }
 
-            var delta = after.Price - oldPrice;
-            var pct = Math.Abs((delta / oldPrice) * 100m);
-
-            if (pct >= _thresholdPercent)
+            if (Math.Abs(pct) >= _thresholdPercent)
             {
                 var alert = new Alert
                 {

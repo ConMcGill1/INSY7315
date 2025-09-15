@@ -1,56 +1,29 @@
-﻿@page
+﻿@page "{id:int}"
 @model INSY7315.Pages.DetailsModel
-
 @{
     ViewData["Title"] = "Details";
 }
 
-<h1>Details</h1>
+<h2>Product Details</h2>
 
-<div>
-    <h4>Product</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Product.Name)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Product.Name)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Product.Price)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Product.Price)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Product.CreatedOn)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Product.CreatedOn)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Product.Owner)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Product.Owner)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Product.Model)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Product.Model)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Product.Category)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Product.Category)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-page="./Edit" asp-route-id="@Model.Product.Id">Edit</a> |
-    <a asp-page="./Index">Back to List</a>
-    <a asp-page="./History" asp-route-id="@Model.Product.Id">View Price History</a>
-</div>
+<dl class="row">
+    <dt class="col-sm-2">Id</dt>
+    <dd class="col-sm-10">@Model.Product.Id</dd>
+    <dt class="col-sm-2">Name</dt>
+    <dd class="col-sm-10">@Model.Product.Name</dd>
+    <dt class="col-sm-2">Owner</dt>
+    <dd class="col-sm-10">@Model.Product.Owner</dd>
+    <dt class="col-sm-2">Category</dt>
+    <dd class="col-sm-10">@Model.Product.Category</dd>
+    <dt class="col-sm-2">Model</dt>
+    <dd class="col-sm-10">@Model.Product.Model</dd>
+    <dt class="col-sm-2">Price</dt>
+    <dd class="col-sm-10">@Model.Product.Price</dd>
+    <dt class="col-sm-2">Created</dt>
+    <dd class="col-sm-10">@Model.Product.CreatedOn</dd>
+</dl>
+
+<p>
+    <a class="btn btn-outline-primary" asp-page="/History" asp-route-id="@Model.Product.Id">Price History</a>
+    <a class="btn btn-secondary" asp-page="/Index">Back</a>
+</p>

@@ -11,13 +11,14 @@ namespace INSY7315.Pages
         private readonly AppDbContext _ctx;
         public HistoryModel(AppDbContext ctx) => _ctx = ctx;
 
-        public Product? Product { get; set; }
+        public Product Product { get; set; } = null!;
         public IList<PriceHistory> History { get; set; } = new List<PriceHistory>();
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            Product = await _ctx.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
-            if (Product == null) return NotFound();
+            var product = await _ctx.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
+            if (product is null) return NotFound();
+            Product = product;
 
             History = await _ctx.PriceHistories.AsNoTracking()
                 .Where(h => h.ProductId == id)

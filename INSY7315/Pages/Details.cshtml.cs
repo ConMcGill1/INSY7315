@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using INSY7315.Data;
@@ -12,31 +8,18 @@ namespace INSY7315.Pages
 {
     public class DetailsModel : PageModel
     {
-        private readonly INSY7315.Data.AppDbContext _context;
+        private readonly AppDbContext _ctx;
+        public DetailsModel(AppDbContext ctx) => _ctx = ctx;
 
-        public DetailsModel(INSY7315.Data.AppDbContext context)
+        public Product Product { get; set; } = null!;
+
+        public async Task<IActionResult> OnGetAsync(int id)
         {
-            _context = context;
-        }
-
-        public Product Product { get; set; } = default!;
-
-        public async Task<IActionResult> OnGetAsync(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var product = await _context.Products.FirstOrDefaultAsync(m => m.Id == id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-            else
-            {
-                Product = product;
-            }
+            var p = await _ctx.Products
+                .Include(x => x.PriceHistory.OrderByDescending(h => h.ChangedOn))
+                .SingleOrDefaultAsync(x => x.Id == id);
+            if (p is null) return NotFound();
+            Product = p;
             return Page();
         }
     }

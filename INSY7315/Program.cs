@@ -1,4 +1,4 @@
-using System.Text;                  // for CSV
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using INSY7315.Data;
@@ -12,6 +12,7 @@ public partial class Program
 
         builder.Services.AddRazorPages();
 
+       
         builder.Services.AddDbContext<AppDbContext>(opt =>
             opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
@@ -19,19 +20,13 @@ public partial class Program
 
         var app = builder.Build();
 
-        // Only run migrations when NOT in the test environment
+       
         var env = app.Services.GetRequiredService<IHostEnvironment>();
-        if (!env.IsEnvironment("Testing"))
+        if (!env.IsEnvironment("Test") && !env.IsEnvironment("Testing"))
         {
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
-        }
-
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseExceptionHandler("/Error");
-            app.UseHsts();
         }
 
         app.UseHttpsRedirection();
@@ -40,133 +35,119 @@ public partial class Program
 
         app.MapRazorPages();
 
-        // ---------- API ENDPOINTS ----------
-
-        app.MapPost("/api/products", async (AppDbContext db, ProductDto dto) =>
+       
+        app.MapGet("/api/products", async (AppDbContext db) =>
         {
-            var p = new Product
-            {
-                Name = dto.Name,
-                Price = dto.Price,
-                Owner = dto.Owner ?? "",
-                Model = dto.Model,
-                Category = dto.Category
-            };
-            db.Products.Add(p);
-            await db.SaveChangesAsync();
-            return Results.Ok(new { p.Id });
+            var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
+            return Results.Ok(items);
         });
 
-        app.MapPut("/api/products/{id:int}", async (int id, AppDbContext db, ProductDto dto, INSY7315.Services.PriceChangeService alerts) =>
+      
+        app.MapGet("/api/products/{id:int}", async (int id, AppDbContext db) =>
         {
-            var existing = await db.Products
-                .Include(x => x.PriceHistory)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var item = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
+            return item is null ? Results.NotFound() : Results.Ok(item);
+        });
 
-            if (existing is null) return Results.NotFound();
+        
+        app.MapPost("/api/products", async (Product input, AppDbContext db) =>
+        {
+           
+            if (string.IsNullOrWhiteSpace(input.Name) || string.IsNullOrWhiteSpace(input.Owner) || input.Price < 0)
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["Name"] = string.IsNullOrWhiteSpace(input.Name) ? new[] { "Required" } : Array.Empty<string>(),
+                    ["Owner"] = string.IsNullOrWhiteSpace(input.Owner) ? new[] { "Required" } : Array.Empty<string>(),
+                    ["Price"] = input.Price < 0 ? new[] { "Must be non-negative" } : Array.Empty<string>(),
+                });
 
-            decimal? oldPrice = null;
+            db.Products.Add(input);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/products/{input.Id}", input);
+        });
 
-            if (existing.Price != dto.Price)
+        
+        app.MapPut("/api/products/{id:int}", async (int id, Product patch, AppDbContext db, INSY7315.Services.PriceChangeService pcs) =>
+        {
+            var entity = await db.Products.SingleOrDefaultAsync(p => p.Id == id);
+            if (entity is null) return Results.NotFound();
+
+            var oldPrice = entity.Price;
+
+         
+            entity.Name = patch.Name;
+            entity.Owner = patch.Owner;
+            entity.Category = patch.Category;
+            entity.Model = patch.Model;
+            entity.Price = patch.Price;
+
+            
+            if (entity.Price != oldPrice)
             {
-                oldPrice = existing.Price;   // capture before changing
-
                 db.PriceHistories.Add(new PriceHistory
                 {
-                    ProductId = existing.Id,
-                    OldPrice = existing.Price,
-                    NewPrice = dto.Price,
+                    ProductId = entity.Id,
+                    OldPrice = oldPrice,
+                    NewPrice = entity.Price,
                     ChangedOn = DateTime.UtcNow
                 });
 
-                existing.Price = dto.Price;
+              
+                await pcs.HandlePriceChangeAsync(entity, oldPrice);
             }
 
-            existing.Name = dto.Name;
-            existing.Owner = dto.Owner ?? "";
-            existing.Model = dto.Model;
-            existing.Category = dto.Category;
-
             await db.SaveChangesAsync();
-
-            // if price changed a lot, record alert
-            if (oldPrice.HasValue)
-                await alerts.MaybeCreateAlertAsync(oldPrice.Value, existing);
-
-            return Results.Ok();
+            return Results.Ok(entity);
         });
 
+      
         app.MapDelete("/api/products/{id:int}", async (int id, AppDbContext db) =>
         {
-            var p = await db.Products.FindAsync(id);
-            if (p is null) return Results.NotFound();
-
-            db.Products.Remove(p);
+            var entity = await db.Products.SingleOrDefaultAsync(p => p.Id == id);
+            if (entity is null) return Results.NotFound();
+            db.Products.Remove(entity);
             await db.SaveChangesAsync();
-            return Results.Ok();
+            return Results.NoContent();
         });
 
-        // Advanced search
-        app.MapGet("/api/products/search", async (
-            string? q,
-            decimal? minPrice,
-            decimal? maxPrice,
-            DateTime? fromDate,
-            DateTime? toDate,
-            AppDbContext db) =>
+        
+        app.MapGet("/api/products/search", async (decimal? minPrice, decimal? maxPrice, AppDbContext db) =>
         {
-            var query = db.Products.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(q))
-            {
-                var s = q.Trim().ToLower();
-                query = query.Where(p =>
-                    p.Name.ToLower().Contains(s) ||
-                    p.Owner.ToLower().Contains(s) ||
-                    (p.Category != null && p.Category.ToLower().Contains(s)) ||
-                    (p.Model != null && p.Model.ToLower().Contains(s)) ||
-                    p.Id.ToString().Contains(s));
-            }
-
-            if (minPrice.HasValue) query = query.Where(p => p.Price >= minPrice.Value);
-            if (maxPrice.HasValue) query = query.Where(p => p.Price <= maxPrice.Value);
-            if (fromDate.HasValue) query = query.Where(p => p.CreatedOn >= fromDate.Value);
-            if (toDate.HasValue) query = query.Where(p => p.CreatedOn <= toDate.Value);
-
-            var list = await query.OrderBy(p => p.Name).ToListAsync();
-            return Results.Ok(list);
+            var query = db.Products.AsNoTracking().AsQueryable();
+            if (minPrice is not null) query = query.Where(p => p.Price >= minPrice);
+            if (maxPrice is not null) query = query.Where(p => p.Price <= maxPrice);
+            var items = await query.OrderBy(p => p.Id).ToListAsync();
+            return Results.Ok(items);
         });
 
-        // CSV export
+        
         app.MapGet("/api/products/export.csv", async (AppDbContext db) =>
         {
-            static string Esc(string? s)
-            {
-                if (string.IsNullOrEmpty(s)) return "";
-                return (s.Contains(',') || s.Contains('"'))
-                    ? $"\"{s.Replace("\"", "\"\"")}\""
-                    : s;
-            }
-
             var sb = new StringBuilder();
             sb.AppendLine("Id,Name,Owner,Category,Model,Price,CreatedOn");
 
-            var rows = await db.Products
-                .Select(p => new { p.Id, p.Name, p.Owner, p.Category, p.Model, p.Price, p.CreatedOn })
-                .OrderBy(p => p.Name)
-                .ToListAsync();
+            var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
+            foreach (var p in items)
+            {
+                
+                static string Cell(string? s)
+                {
+                    if (string.IsNullOrEmpty(s)) return "";
+                    if (s.Contains('"') || s.Contains(','))
+                        return $"\"{s.Replace("\"", "\"\"")}\"";
+                    return s;
+                }
 
-            foreach (var r in rows)
-                sb.AppendLine($"{r.Id},{Esc(r.Name)},{Esc(r.Owner)},{Esc(r.Category)},{Esc(r.Model)},{r.Price},{r.CreatedOn:yyyy-MM-dd}");
+                sb.AppendLine($"{p.Id},{Cell(p.Name)},{Cell(p.Owner)},{Cell(p.Category)},{Cell(p.Model)},{p.Price},{p.CreatedOn:o}");
+            }
 
-            var bytes = Encoding.UTF8.GetBytes(sb.ToString());
-            return Results.File(bytes, "text/csv; charset=utf-8", $"products_{DateTime.UtcNow:yyyyMMddHHmmss}.csv");
+            return Results.Text(sb.ToString(), "text/csv", Encoding.UTF8);
         });
 
-        // Alerts list
+        
         app.MapGet("/api/alerts", async (AppDbContext db) =>
         {
-            var items = await db.Alerts
+            var items = await db.Alerts.AsNoTracking()
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(100)
                 .ToListAsync();
@@ -174,10 +155,10 @@ public partial class Program
             return Results.Ok(items);
         });
 
-        // ---------- RUN ----------
+        
         app.Run();
     }
 }
 
-// Keep this so WebApplicationFactory<Program> can locate the entry point in tests
+
 public partial class Program { }

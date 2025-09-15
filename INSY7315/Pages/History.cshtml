@@ -3,26 +3,27 @@
 @{
     ViewData["Title"] = "Price History";
 }
-<h2>Price history for @Model.Product!.Name</h2>
 
-@if (Model.History.Count == 0)
-{
-    <p>No price changes recorded for this product yet.</p>
-}
-else
-{
-    <table class="table">
-        <thead><tr><th>Date</th><th>Old Price</th><th>New Price</th></tr></thead>
-        <tbody>
-            @foreach (var h in Model.History)
-            {
-                <tr>
-                    <td>@h.ChangedOn.ToLocalTime()</td>
-                    <td>@h.OldPrice</td>
-                    <td>@h.NewPrice</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-<p><a asp-page="./Index">Back to list</a></p>
+<h2>Price History - @Model.Product.Name</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Changed On</th>
+            <th>Old</th>
+            <th>New</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var h in Model.History)
+        {
+            <tr>
+                <td>@h.ChangedOn</td>
+                <td>@h.OldPrice</td>
+                <td>@h.NewPrice</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<p><a class="btn btn-secondary" asp-page="/Details" asp-route-id="@Model.Product.Id">Back</a></p>
