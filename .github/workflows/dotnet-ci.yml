@@ -22,11 +22,18 @@ jobs:
       - name: Restore (solution)
         run: dotnet restore INSY7315.sln
 
-      - name: Restore dotnet tools
-        run: dotnet tool restore
-
+     
       - name: Verify formatting
-        run: dotnet format --verify-no-changes
+        shell: bash
+        run: |
+          if dotnet format --version >/dev/null 2>&1; then
+            echo "Using SDK 'dotnet format'"
+            dotnet format INSY7315.sln --verify-no-changes
+          else
+            echo "Installing dotnet-format tool (8.*)"
+            dotnet tool install -g dotnet-format --version 8.*
+            ~/.dotnet/tools/dotnet-format INSY7315.sln --verify-no-changes
+          fi
 
       - name: Build (warnings as errors)
         run: dotnet build INSY7315.sln -c Release -p:TreatWarningsAsErrors=true --no-restore
