@@ -15,10 +15,8 @@ public partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-
         var isTesting = builder.Environment.IsEnvironment("Test") || builder.Environment.IsEnvironment("Testing");
         var isProduction = builder.Environment.IsProduction();
-
 
         builder.Services.AddRazorPages(options =>
         {
@@ -27,18 +25,15 @@ public partial class Program
             options.Conventions.AllowAnonymousToPage("/Privacy");
         });
 
-
         if (isTesting)
         {
-            builder.Services.AddDbContext<AppDbContext>(opt =>
-                opt.UseInMemoryDatabase("TestDb"));
+            builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("TestDb"));
         }
         else
         {
             builder.Services.AddDbContext<AppDbContext>(opt =>
                 opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
         }
-
 
         builder.Services.AddDefaultIdentity<ApplicationUser>(opts =>
         {
@@ -53,7 +48,6 @@ public partial class Program
         .AddRoles<IdentityRole>()
         .AddEntityFrameworkStores<AppDbContext>();
 
-
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true;
@@ -64,19 +58,15 @@ public partial class Program
             options.AccessDeniedPath = "/Identity/Account/AccessDenied";
         });
 
-
         builder.Services.AddControllersWithViews(opts =>
         {
             opts.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
         });
 
-
         builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
-
 
         builder.Services.AddScoped<PriceChangeService>();
         builder.Services.AddScoped<PdfService>();
-
 
         builder.Services.AddRateLimiter(options =>
         {
@@ -96,7 +86,6 @@ public partial class Program
             app.UseHsts();
         }
 
-
         app.Use(async (ctx, next) =>
         {
             var h = ctx.Response.Headers;
@@ -105,20 +94,21 @@ public partial class Program
             h["X-Frame-Options"] = "DENY";
             h["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
             h["Content-Security-Policy"] =
-                "default-src 'self'; " +
-                "style-src 'self' https://cdn.jsdelivr.net; " +
-                "img-src 'self' data:; " +
-                "frame-ancestors 'none'; base-uri 'self'";
+                "default-src 'self'; style-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'";
             await next();
         });
 
-        app.UseHttpsRedirection();
-        app.UseStaticFiles();
+        if (!isTesting)
+        {
+            app.UseHttpsRedirection();
+        }
 
+        app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseRateLimiter();
+
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -129,14 +119,11 @@ public partial class Program
             IdentitySeed.EnsureSeedAsync(app.Services).GetAwaiter().GetResult();
         }
 
-
         app.MapRazorPages();
-
 
         var antiforgery = app.Services.GetRequiredService<IAntiforgery>();
         var csrfFilter = new CsrfValidateFilter(antiforgery);
         var api = app.MapGroup("/api");
-
 
         if (isProduction)
         {
@@ -144,7 +131,6 @@ public partial class Program
                .RequireRateLimiting("apiWrites")
                .AddEndpointFilter(csrfFilter);
         }
-
 
         api.MapGet("/products", async (AppDbContext db) =>
             Results.Ok(await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync()));
@@ -236,6 +222,26 @@ public partial class Program
             return Results.Ok(await q.OrderBy(p => p.Id).ToListAsync());
         });
 
+        api.MapGet("/products/export.pdf", async (AppDbContext db, PdfService pdf) =>
+        {
+            var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
+            var bytes = pdf.BuildProductsPdf(items);
+            return Results.File(bytes, "application/pdf", "products.pdf");
+        });
+
+        api.MapGet("/products/{id:int}/history/export.pdf", async (int id, AppDbContext db, PdfService pdf) =>
+        {
+            var product = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
+            if (product is null) return Results.NotFound();
+
+            var hist = await db.PriceHistories.AsNoTracking()
+                        .Where(h => h.ProductId == id)
+                        .OrderByDescending(h => h.ChangedOn)
+                        .ToListAsync();
+
+            var bytes = pdf.BuildHistoryPdf(product, hist);
+            return Results.File(bytes, "application/pdf", $"product-{id}-history.pdf");
+        });
 
         api.MapGet("/products/export.csv", async (AppDbContext db) =>
         {
@@ -274,28 +280,6 @@ public partial class Program
             return Results.Text(sb.ToString(), "text/csv", Encoding.UTF8);
         });
 
-        api.MapGet("/products/export.pdf", async (AppDbContext db, PdfService pdf) =>
-        {
-            var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
-            var bytes = pdf.BuildProductsPdf(items);
-            return Results.File(bytes, "application/pdf", "products.pdf");
-        });
-
-        api.MapGet("/products/{id:int}/history/export.pdf", async (int id, AppDbContext db, PdfService pdf) =>
-        {
-            var product = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
-            if (product is null) return Results.NotFound();
-
-            var hist = await db.PriceHistories.AsNoTracking()
-                        .Where(h => h.ProductId == id)
-                        .OrderByDescending(h => h.ChangedOn)
-                        .ToListAsync();
-
-            var bytes = pdf.BuildHistoryPdf(product, hist);
-            return Results.File(bytes, "application/pdf", $"product-{id}-history.pdf");
-        });
-
-
         api.MapGet("/alerts", async (AppDbContext db) =>
             Results.Ok(await db.Alerts.AsNoTracking().OrderByDescending(a => a.CreatedAt).Take(100).ToListAsync()));
 
@@ -315,7 +299,6 @@ public partial class Program
         app.Run();
     }
 }
-
 
 public sealed class CsrfValidateFilter : IEndpointFilter
 {

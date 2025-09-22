@@ -19,7 +19,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-  
       - name: Set environment to Testing
         run: |
           echo "ASPNETCORE_ENVIRONMENT=Testing" >> $GITHUB_ENV
@@ -28,7 +27,6 @@ jobs:
       - name: Restore (solution)
         run: dotnet restore INSY7315.sln
 
-     
       - name: Verify formatting
         shell: bash
         run: |
