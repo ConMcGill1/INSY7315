@@ -22,13 +22,13 @@ public partial class Program
             options.Conventions.AllowAnonymousToPage("/Privacy");
         });
 
-        
+
         builder.Services.AddDbContext<AppDbContext>(opt =>
             opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
         builder.Services.AddDefaultIdentity<ApplicationUser>(opts =>
         {
-            opts.SignIn.RequireConfirmedAccount = true; 
+            opts.SignIn.RequireConfirmedAccount = true;
             opts.Password.RequiredLength = 10;
             opts.Password.RequireNonAlphanumeric = true;
             opts.Password.RequireUppercase = true;
@@ -40,7 +40,7 @@ public partial class Program
         .AddRoles<IdentityRole>()
         .AddEntityFrameworkStores<AppDbContext>();
 
-    
+
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true;
@@ -51,13 +51,13 @@ public partial class Program
             options.AccessDeniedPath = "/Identity/Account/AccessDenied";
         });
 
-    
+
         builder.Services.AddControllersWithViews(options =>
         {
             options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
         });
 
-       
+
         builder.Services.AddAntiforgery(options =>
         {
             options.HeaderName = "RequestVerificationToken";
@@ -66,7 +66,7 @@ public partial class Program
         builder.Services.AddScoped<PriceChangeService>();
         builder.Services.AddScoped<PdfService>();
 
- 
+
         builder.Services.AddRateLimiter(options =>
         {
             options.AddFixedWindowLimiter("apiWrites", o =>
@@ -80,13 +80,13 @@ public partial class Program
 
         var app = builder.Build();
 
-      
+
         if (!app.Environment.IsDevelopment())
         {
             app.UseHsts();
         }
 
-      
+
         app.Use(async (ctx, next) =>
         {
             var h = ctx.Response.Headers;
@@ -96,7 +96,7 @@ public partial class Program
             h["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
             h["Content-Security-Policy"] =
                 "default-src 'self'; " +
-                "style-src 'self' https://cdn.jsdelivr.net; " +   
+                "style-src 'self' https://cdn.jsdelivr.net; " +
                 "img-src 'self' data:; " +
                 "frame-ancestors 'none'; base-uri 'self'";
             await next();
@@ -110,7 +110,7 @@ public partial class Program
         app.UseAuthorization();
         app.UseRateLimiter();
 
-   
+
         var env = app.Services.GetRequiredService<IHostEnvironment>();
         using (var scope = app.Services.CreateScope())
         {
@@ -122,20 +122,20 @@ public partial class Program
             IdentitySeed.EnsureSeedAsync(app.Services).GetAwaiter().GetResult();
         }
 
-      
+
         app.MapRazorPages();
 
-       
+
         var antiforgery = app.Services.GetRequiredService<IAntiforgery>();
         var csrfFilter = new CsrfValidateFilter(antiforgery);
 
-        
+
         var api = app.MapGroup("/api")
                      .RequireAuthorization()
                      .RequireRateLimiting("apiWrites")
                      .AddEndpointFilter(csrfFilter);
 
-     
+
         api.MapGet("/products", async (AppDbContext db) =>
             Results.Ok(await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync()));
 
@@ -286,7 +286,7 @@ public partial class Program
             return Results.File(bytes, "application/pdf", $"product-{id}-history.pdf");
         });
 
-        
+
         api.MapGet("/alerts", async (AppDbContext db) =>
             Results.Ok(await db.Alerts.AsNoTracking().OrderByDescending(a => a.CreatedAt).Take(100).ToListAsync()));
 
@@ -318,7 +318,7 @@ public sealed class CsrfValidateFilter : IEndpointFilter
     {
         var http = context.HttpContext;
 
-       
+
         if (HttpMethods.IsPost(http.Request.Method) ||
             HttpMethods.IsPut(http.Request.Method) ||
             HttpMethods.IsDelete(http.Request.Method) ||

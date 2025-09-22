@@ -17,7 +17,7 @@ namespace INSY7315.Pages
         [BindProperty(SupportsGet = true)] public string? Category { get; set; }
         [BindProperty(SupportsGet = true)] public string? Model { get; set; }
 
-      
+
         [BindProperty(SupportsGet = true)] public decimal? MinPrice { get; set; }
         [BindProperty(SupportsGet = true)] public decimal? MaxPrice { get; set; }
         [BindProperty(SupportsGet = true)] public DateTime? CreatedFrom { get; set; }

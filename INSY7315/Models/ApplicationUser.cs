@@ -2,7 +2,7 @@
 
 namespace INSY7315.Models
 {
-  
+
     public class ApplicationUser : IdentityUser
     {
     }

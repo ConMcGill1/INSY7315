@@ -17,13 +17,13 @@ namespace INSY7315.Data
             var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<INSY7315.Models.ApplicationUser>>();
 
-            
+
             var roles = new[] { "Admin", "Owner", "Employee" };
             foreach (var role in roles)
                 if (!await roleMgr.RoleExistsAsync(role))
                     await roleMgr.CreateAsync(new IdentityRole(role));
 
-           
+
             var email = "admin@insy7315.local";
             var admin = await userMgr.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (admin == null)

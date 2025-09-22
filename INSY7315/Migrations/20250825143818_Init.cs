@@ -62,7 +62,7 @@ namespace INSY7315.Migrations
                 columns: new[] { "Name", "Category", "Model" });
         }
 
-       
+
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
