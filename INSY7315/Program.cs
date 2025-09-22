@@ -85,7 +85,7 @@ public partial class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
- 
+    
         app.MapRazorPages();
 
         app.MapGet("/api/products", async (AppDbContext db) =>
