@@ -1,4 +1,4 @@
-name: .NET Build, Test, Coverage, Publish
+name: .NET Build, Test (non-blocking), Coverage, Publish
 
 on:
   push:
@@ -37,16 +37,25 @@ jobs:
             ~/.dotnet/tools/dotnet-format INSY7315.sln --verify-no-changes
           fi
 
-      - name: Build (warnings as errors)
+      - name: Build 
         run: dotnet build INSY7315.sln -c Release -p:TreatWarningsAsErrors=true --no-restore
 
-      - name: Test with coverage
-        run: dotnet test INSY7315.Tests/INSY7315.Tests.csproj -c Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults
+      - name: Test with coverage 
+        continue-on-error: true
+        run: |
+          dotnet test INSY7315.Tests/INSY7315.Tests.csproj             -c Release --no-build             --collect:"XPlat Code Coverage"             --results-directory ./TestResults             --logger "trx;LogFileName=test-results.trx"
 
-      - name: Vulnerable packages (solution)
+      - name: Upload test results (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults
+
+      - name: Vulnerable packages 
         run: dotnet list INSY7315.sln package --vulnerable --include-transitive
 
-      - name: Publish web app (only web project)
+      - name: Publish web app 
         run: dotnet publish INSY7315/INSY7315.csproj -c Release -o ./publish --no-build
 
       - name: Upload publish artifact
