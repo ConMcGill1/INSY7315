@@ -15,28 +15,26 @@ namespace INSY7315.Tests
 
         protected override IHost CreateHost(IHostBuilder builder)
         {
+            builder.UseEnvironment("Testing");
+
             builder.ConfigureServices(services =>
             {
-                // Remove the app’s DbContext registration
                 var descriptor = services.SingleOrDefault(d =>
                     d.ServiceType == typeof(DbContextOptions<AppDbContext>));
                 if (descriptor != null)
                     services.Remove(descriptor);
 
-                // Create ONE shared in-memory SQLite connection
                 _conn = new SqliteConnection("DataSource=:memory:");
                 _conn.Open();
 
-                // Register EF Core with SQLite in-memory
                 services.AddDbContext<AppDbContext>(options =>
                     options.UseSqlite(_conn));
 
-                // Build provider to run migrations/ensure schema
                 var sp = services.BuildServiceProvider();
                 using var scope = sp.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 db.Database.EnsureDeleted();
-                db.Database.EnsureCreated();   // or db.Database.Migrate() if you prefer
+                db.Database.EnsureCreated();
             });
 
             return base.CreateHost(builder);
