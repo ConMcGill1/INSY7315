@@ -1,4 +1,4 @@
-name: .NET Build & Test + CodeQL
+name: .NET Build, Test, Coverage, Publish
 
 on:
   push:
@@ -7,49 +7,96 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Run tests
-        run: dotnet test --no-build --verbosity normal
-
-  codeql:
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: csharp
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
       - name: Restore
         run: dotnet restore
 
-      - name: Build for CodeQL
-        run: dotnet build --configuration Release
+      - name: Verify formatting
+        run: dotnet tool restore && dotnet format --verify-no-changes
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - name: Build (warnings as errors)
+        run: dotnet build -c Release -p:TreatWarningsAsErrors=true --no-restore
+
+      - name: Test with coverage
+        run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults
+
+      - name: Report coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: "**/coverage.cobertura.xml"
+          badge: true
+          fail_below_min: true
+          thresholds: '60 80'
+
+      - name: Check vulnerable packages (incl. transitive)
+        run: dotnet list package --vulnerable --include-transitive
+
+      - name: Publish (self-contained folder)
+        run: dotnet publish **/*.csproj -c Release -o ./publish
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish
+          path: ./publish
+name: .NET Build, Test, Coverage, Publish
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Verify formatting
+        run: dotnet tool restore && dotnet format --verify-no-changes
+
+      - name: Build (warnings as errors)
+        run: dotnet build -c Release -p:TreatWarningsAsErrors=true --no-restore
+
+      - name: Test with coverage
+        run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults
+
+      - name: Report coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: "**/coverage.cobertura.xml"
+          badge: true
+          fail_below_min: true
+          thresholds: '60 80'
+
+      - name: Check vulnerable packages (incl. transitive)
+        run: dotnet list package --vulnerable --include-transitive
+
+      - name: Publish (self-contained folder)
+        run: dotnet publish **/*.csproj -c Release -o ./publish
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish
+          path: ./publish
