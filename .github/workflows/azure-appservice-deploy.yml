@@ -31,6 +31,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name:INSY7315             
+          app-name: INSY7315            
           publish-profile: ${{ secrets.AZUREAPPSVC_PUBLISH_PROFILE }}
           package: ./publish
