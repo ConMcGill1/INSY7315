@@ -15,7 +15,7 @@ public partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-      
+
         builder.Services.AddRazorPages(options =>
         {
             options.Conventions.AuthorizeFolder("/");
@@ -23,7 +23,7 @@ public partial class Program
             options.Conventions.AllowAnonymousToPage("/Privacy");
         });
 
-    
+
         builder.Services.AddDbContext<AppDbContext>(opt =>
             opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
@@ -40,7 +40,7 @@ public partial class Program
         .AddRoles<IdentityRole>()
         .AddEntityFrameworkStores<AppDbContext>();
 
-      
+
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true;
@@ -51,20 +51,20 @@ public partial class Program
             options.AccessDeniedPath = "/Identity/Account/AccessDenied";
         });
 
-       
+
         builder.Services.AddControllersWithViews(opts =>
         {
             opts.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
         });
 
-       
+
         builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
 
-      
+
         builder.Services.AddScoped<PriceChangeService>();
         builder.Services.AddScoped<PdfService>();
 
-       
+
         builder.Services.AddRateLimiter(options =>
         {
             options.AddFixedWindowLimiter("apiWrites", o =>
@@ -78,7 +78,7 @@ public partial class Program
 
         var app = builder.Build();
 
-      
+
         var isTesting = app.Environment.IsEnvironment("Test") || app.Environment.IsEnvironment("Testing");
         var isProduction = app.Environment.IsProduction();
 
@@ -87,7 +87,7 @@ public partial class Program
             app.UseHsts();
         }
 
-       
+
         app.Use(async (ctx, next) =>
         {
             var h = ctx.Response.Headers;
@@ -109,7 +109,7 @@ public partial class Program
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseRateLimiter(); 
+        app.UseRateLimiter();
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -120,15 +120,15 @@ public partial class Program
             IdentitySeed.EnsureSeedAsync(app.Services).GetAwaiter().GetResult();
         }
 
-       
+
         app.MapRazorPages();
 
-        
+
         var antiforgery = app.Services.GetRequiredService<IAntiforgery>();
         var csrfFilter = new CsrfValidateFilter(antiforgery);
         var api = app.MapGroup("/api");
 
-        
+
         if (isProduction)
         {
             api.RequireAuthorization()
@@ -136,7 +136,7 @@ public partial class Program
                .AddEndpointFilter(csrfFilter);
         }
 
-       
+
         api.MapGet("/products", async (AppDbContext db) =>
             Results.Ok(await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync()));
 
@@ -227,7 +227,7 @@ public partial class Program
             return Results.Ok(await q.OrderBy(p => p.Id).ToListAsync());
         });
 
-    
+
         api.MapGet("/products/export.csv", async (AppDbContext db) =>
         {
             var sb = new StringBuilder();
