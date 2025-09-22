@@ -20,12 +20,29 @@ It allows an electronics/furniture shop owner to manage products, track price hi
 - Authentication and role-based access (if implemented)
 - Regression testing of existing features
 
+### Security + DevOps Enhancements (Sprint 8)
+
+- HSTS + HTTPS redirection enforced in production
+- Secure cookies with shorter expiry and sliding sessions
+- Global Anti-Forgery Tokens to prevent CSRF attacks
+- Improved Identity defaults and hardened password policy
+- Static code analysis & security scanning added to DevOps pipeline (GitHub Actions)
+- Cloud deployment ready (production connection string in appsettings.Production.json)
+
+### DevOps Pipeline (Sprint 8)
+
+- CI/CD: GitHub Actions build + test + CodeQL security scan.
+- Static Code Analysis: checks for code quality, vulnerabilities, and best practices.
+- Automated Tests: runs unit and integration tests on each push.
+- [![.NET Build & Test + CodeQL](https://github.com/<your-username>/<your-repo>/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/<your-username>/<your-repo>/actions/workflows/dotnet-ci.yml)
+
 ## Technology Stack
 - **ASP.NET Core MVC 8**
 - **Entity Framework Core (Code-First)**
 - **SQL Server**
 - **Bootstrap 5** (responsive UI)
 - **xUnit/MSTest/NUnit** (for unit/integration testing)
+- **GitHub Actions** (CI/CD with static code and security scans)
 
 ## Database Structure
 

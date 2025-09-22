@@ -1,5 +1,6 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc; // NEW for AutoValidateAntiforgeryTokenAttribute
 using Microsoft.EntityFrameworkCore;
 using INSY7315.Data;
 using INSY7315.Models;
@@ -35,10 +36,34 @@ public partial class Program
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();
 
+        
+        builder.Services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.SlidingExpiration = true;
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+            options.LoginPath = "/Identity/Account/Login";
+            options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+        });
+
+        
+        builder.Services.AddControllersWithViews(options =>
+        {
+            options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+        });
+
+        
         builder.Services.AddScoped<PriceChangeService>();
         builder.Services.AddScoped<PdfService>();
 
         var app = builder.Build();
+
+        
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHsts();
+        }
 
         
         var env = app.Services.GetRequiredService<IHostEnvironment>();
@@ -52,6 +77,7 @@ public partial class Program
             IdentitySeed.EnsureSeedAsync(app.Services).GetAwaiter().GetResult();
         }
 
+        
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 
@@ -59,20 +85,18 @@ public partial class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
+ 
         app.MapRazorPages();
 
-       
         app.MapGet("/api/products", async (AppDbContext db) =>
             Results.Ok(await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync()));
 
-       
         app.MapGet("/api/products/{id:int}", async (int id, AppDbContext db) =>
         {
             var item = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
             return item is null ? Results.NotFound() : Results.Ok(item);
         });
 
-      
         app.MapPost("/api/products", async (Product input, AppDbContext db) =>
         {
             if (string.IsNullOrWhiteSpace(input.Name) || string.IsNullOrWhiteSpace(input.Owner) || input.Price < 0)
@@ -88,7 +112,6 @@ public partial class Program
             return Results.Created($"/api/products/{input.Id}", input);
         });
 
-       
         app.MapPut("/api/products/{id:int}", async (int id, Product patch, AppDbContext db, PriceChangeService pcs) =>
         {
             var entity = await db.Products.SingleOrDefaultAsync(p => p.Id == id);
@@ -117,7 +140,6 @@ public partial class Program
             return Results.Ok(entity);
         });
 
-        
         app.MapDelete("/api/products/{id:int}", async (int id, AppDbContext db) =>
         {
             var entity = await db.Products.SingleOrDefaultAsync(p => p.Id == id);
@@ -127,7 +149,6 @@ public partial class Program
             return Results.NoContent();
         });
 
-       
         app.MapGet("/api/products/search", async (
             decimal? minPrice,
             decimal? maxPrice,
@@ -143,7 +164,7 @@ public partial class Program
             return Results.Ok(await q.OrderBy(p => p.Id).ToListAsync());
         });
 
-       
+
         app.MapGet("/api/products/export.csv", async (AppDbContext db) =>
         {
             var sb = new StringBuilder();
