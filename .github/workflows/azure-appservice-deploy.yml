@@ -1,9 +1,9 @@
 name: Deploy to Azure Web App
 
 on:
-  workflow_dispatch:  
+  workflow_dispatch:
   push:
-    branches: [ main ] 
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -18,18 +18,19 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      
+      - name: Restore (web project)
+        run: dotnet restore INSY7315/INSY7315.csproj
 
-      - name: Build (Release)
-        run: dotnet build -c Release --no-restore
+      - name: Build (Release, web project)
+        run: dotnet build INSY7315/INSY7315.csproj -c Release --no-restore
 
-      - name: Publish app
-        run: dotnet publish **/*.csproj -c Release -o ./publish
+      - name: Publish app (web project only)
+        run: dotnet publish INSY7315/INSY7315.csproj -c Release -o ./publish --no-build
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: insy7315               
+          app-name:INSY7315             
           publish-profile: ${{ secrets.AZUREAPPSVC_PUBLISH_PROFILE }}
           package: ./publish
