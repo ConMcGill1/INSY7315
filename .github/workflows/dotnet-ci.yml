@@ -19,9 +19,11 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
- 
-      - name: Set ASPNETCORE_ENVIRONMENT to Testing
-        run: echo "ASPNETCORE_ENVIRONMENT=Testing" >> $GITHUB_ENV
+  
+      - name: Set environment to Testing
+        run: |
+          echo "ASPNETCORE_ENVIRONMENT=Testing" >> $GITHUB_ENV
+          echo "DOTNET_ENVIRONMENT=Testing" >> $GITHUB_ENV
 
       - name: Restore (solution)
         run: dotnet restore INSY7315.sln
@@ -31,10 +33,8 @@ jobs:
         shell: bash
         run: |
           if dotnet format --version >/dev/null 2>&1; then
-            echo "Using SDK 'dotnet format'"
             dotnet format INSY7315.sln --verify-no-changes
           else
-            echo "Installing dotnet-format tool"
             dotnet tool install -g dotnet-format
             ~/.dotnet/tools/dotnet-format INSY7315.sln --verify-no-changes
           fi

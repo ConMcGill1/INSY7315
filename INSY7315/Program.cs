@@ -16,6 +16,10 @@ public partial class Program
         var builder = WebApplication.CreateBuilder(args);
 
 
+        var isTesting = builder.Environment.IsEnvironment("Test") || builder.Environment.IsEnvironment("Testing");
+        var isProduction = builder.Environment.IsProduction();
+
+
         builder.Services.AddRazorPages(options =>
         {
             options.Conventions.AuthorizeFolder("/");
@@ -24,8 +28,17 @@ public partial class Program
         });
 
 
-        builder.Services.AddDbContext<AppDbContext>(opt =>
-            opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+        if (isTesting)
+        {
+            builder.Services.AddDbContext<AppDbContext>(opt =>
+                opt.UseInMemoryDatabase("TestDb"));
+        }
+        else
+        {
+            builder.Services.AddDbContext<AppDbContext>(opt =>
+                opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+        }
+
 
         builder.Services.AddDefaultIdentity<ApplicationUser>(opts =>
         {
@@ -77,10 +90,6 @@ public partial class Program
         });
 
         var app = builder.Build();
-
-
-        var isTesting = app.Environment.IsEnvironment("Test") || app.Environment.IsEnvironment("Testing");
-        var isProduction = app.Environment.IsProduction();
 
         if (!app.Environment.IsDevelopment())
         {
@@ -285,6 +294,7 @@ public partial class Program
             var bytes = pdf.BuildHistoryPdf(product, hist);
             return Results.File(bytes, "application/pdf", $"product-{id}-history.pdf");
         });
+
 
         api.MapGet("/alerts", async (AppDbContext db) =>
             Results.Ok(await db.Alerts.AsNoTracking().OrderByDescending(a => a.CreatedAt).Take(100).ToListAsync()));
