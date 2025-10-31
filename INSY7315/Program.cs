@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 public partial class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +35,9 @@ public partial class Program
                 opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
         }
 
-        builder.Services.AddDefaultIdentity<ApplicationUser>(opts =>
+        
+        builder.Services
+        .AddDefaultIdentity<ApplicationUser>(opts =>
         {
             opts.SignIn.RequireConfirmedAccount = false;
             opts.Password.RequiredLength = 8;
@@ -43,31 +45,26 @@ public partial class Program
             opts.Password.RequireUppercase = false;
             opts.Password.RequireDigit = true;
             opts.Lockout.MaxFailedAccessAttempts = 5;
-            opts.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
         })
-        .AddRoles<IdentityRole>()
+        .AddRoles<IdentityRole>()                   
         .AddEntityFrameworkStores<AppDbContext>();
 
-        builder.Services.ConfigureApplicationCookie(options =>
+       
+        builder.Services.AddAntiforgery(options =>
         {
-            options.Cookie.HttpOnly = true;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.SlidingExpiration = true;
-            options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-            options.LoginPath = "/Identity/Account/Login";
-            options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+            options.HeaderName = "RequestVerificationToken";
         });
 
-        builder.Services.AddControllersWithViews(opts =>
-        {
-            opts.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
-        });
-
-        builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
-
-        builder.Services.AddScoped<PriceChangeService>();
+        
+        var threshold = builder.Configuration.GetValue<decimal>("Alerts:PriceChangePercent", 10m);
+        builder.Services.AddScoped(sp => new PriceChangeService(sp.GetRequiredService<AppDbContext>(), threshold));
         builder.Services.AddScoped<PdfService>();
 
+      
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+
+        
         builder.Services.AddRateLimiter(options =>
         {
             options.AddFixedWindowLimiter("apiWrites", o =>
@@ -83,41 +80,23 @@ public partial class Program
 
         if (!app.Environment.IsDevelopment())
         {
+            app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
 
-        app.Use(async (ctx, next) =>
+        if (!isProduction)
         {
-            var h = ctx.Response.Headers;
-            h["X-Content-Type-Options"] = "nosniff";
-            h["Referrer-Policy"] = "no-referrer";
-            h["X-Frame-Options"] = "DENY";
-            h["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
-            h["Content-Security-Policy"] =
-                "default-src 'self'; style-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'";
-            await next();
-        });
-
-        if (!isTesting)
-        {
-            app.UseHttpsRedirection();
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
 
+        app.UseHttpsRedirection();
         app.UseStaticFiles();
+
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseRateLimiter();
-
-        using (var scope = app.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            if (!isTesting)
-            {
-                try { db.Database.Migrate(); } catch { db.Database.EnsureCreated(); }
-            }
-            IdentitySeed.EnsureSeedAsync(app.Services).GetAwaiter().GetResult();
-        }
 
         app.MapRazorPages();
 
@@ -132,6 +111,7 @@ public partial class Program
                .AddEndpointFilter(csrfFilter);
         }
 
+       
         api.MapGet("/products", async (AppDbContext db) =>
             Results.Ok(await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync()));
 
@@ -155,8 +135,20 @@ public partial class Program
                 });
             }
 
+            input.CreatedOn = DateTime.UtcNow;
             db.Products.Add(input);
+            await db.SaveChangesAsync(); 
+
+           
+            db.PriceHistories.Add(new PriceHistory
+            {
+                ProductId = input.Id,
+                OldPrice = input.Price,
+                NewPrice = input.Price,
+                ChangedOn = DateTime.UtcNow
+            });
             await db.SaveChangesAsync();
+
             return Results.Created($"/api/products/{input.Id}", input);
         });
 
@@ -178,11 +170,12 @@ public partial class Program
             }
 
             var oldPrice = entity.Price;
-            entity.Name = patch.Name;
-            entity.Owner = patch.Owner;
-            entity.Category = patch.Category;
-            entity.Model = patch.Model;
+
+            entity.Name = patch.Name.Trim();
+            entity.Owner = patch.Owner.Trim();
             entity.Price = patch.Price;
+            entity.Model = patch.Model?.Trim();
+            entity.Category = patch.Category?.Trim();
 
             if (entity.Price != oldPrice)
             {
@@ -222,6 +215,7 @@ public partial class Program
             return Results.Ok(await q.OrderBy(p => p.Id).ToListAsync());
         });
 
+        // ===== Exports =====
         api.MapGet("/products/export.pdf", async (AppDbContext db, PdfService pdf) =>
         {
             var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
@@ -234,67 +228,106 @@ public partial class Program
             var product = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
             if (product is null) return Results.NotFound();
 
-            var hist = await db.PriceHistories.AsNoTracking()
-                        .Where(h => h.ProductId == id)
-                        .OrderByDescending(h => h.ChangedOn)
-                        .ToListAsync();
+            var hist = await db.PriceHistories.AsNoTracking().Where(h => h.ProductId == id)
+                .OrderByDescending(h => h.ChangedOn).ToListAsync();
 
-            var bytes = pdf.BuildHistoryPdf(product, hist);
-            return Results.File(bytes, "application/pdf", $"product-{id}-history.pdf");
+            var bytes = pdf.BuildProductHistoryPdf(product, hist);
+            return Results.File(bytes, "application/pdf", $"product_{id}_history.pdf");
         });
 
         api.MapGet("/products/export.csv", async (AppDbContext db) =>
         {
+            var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
             var sb = new StringBuilder();
             sb.AppendLine("Id,Name,Owner,Category,Model,Price,CreatedOn");
-            var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
-
-            static string Cell(string? s)
-            {
-                if (string.IsNullOrEmpty(s)) return "";
-                if (s.Contains('"') || s.Contains(',')) return $"\"{s.Replace("\"", "\"\"")}\"";
-                return s;
-            }
-
             foreach (var p in items)
-                sb.AppendLine($"{p.Id},{Cell(p.Name)},{Cell(p.Owner)},{Cell(p.Category)},{Cell(p.Model)},{p.Price},{p.CreatedOn:o}");
-
+            {
+                static string Esc(string? s) => $"\"{(s ?? "").Replace("\"", "\"\"")}\"";
+                sb.AppendLine(string.Join(",", new[]
+                {
+                    p.Id.ToString(),
+                    Esc(p.Name),
+                    Esc(p.Owner),
+                    Esc(p.Category),
+                    Esc(p.Model),
+                    p.Price.ToString("0.00"),
+                    p.CreatedOn.ToString("u")
+                }));
+            }
             return Results.Text(sb.ToString(), "text/csv", Encoding.UTF8);
         });
 
         api.MapGet("/products/{id:int}/history/export.csv", async (int id, AppDbContext db) =>
         {
-            var product = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
-            if (product is null) return Results.NotFound();
+            var hist = await db.PriceHistories.AsNoTracking().Where(h => h.ProductId == id)
+                .OrderByDescending(h => h.ChangedOn).ToListAsync();
 
             var sb = new StringBuilder();
             sb.AppendLine("ChangedOn,OldPrice,NewPrice");
-            var hist = await db.PriceHistories.AsNoTracking()
-                        .Where(h => h.ProductId == id)
-                        .OrderByDescending(h => h.ChangedOn)
-                        .ToListAsync();
-
             foreach (var h in hist)
-                sb.AppendLine($"{h.ChangedOn:o},{h.OldPrice},{h.NewPrice}");
-
+            {
+                sb.AppendLine($"{h.ChangedOn:u},{h.OldPrice:0.00},{h.NewPrice:0.00}");
+            }
             return Results.Text(sb.ToString(), "text/csv", Encoding.UTF8);
         });
 
+        
         api.MapGet("/alerts", async (AppDbContext db) =>
-            Results.Ok(await db.Alerts.AsNoTracking().OrderByDescending(a => a.CreatedAt).Take(100).ToListAsync()));
+        {
+            var list = await db.Alerts.AsNoTracking()
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(100)
+                .ToListAsync();
+            return Results.Ok(list);
+        });
 
         api.MapGet("/reports/summary", async (AppDbContext db) =>
         {
-            var total = await db.Products.CountAsync();
-            var totalValue = await db.Products.SumAsync(p => (decimal?)p.Price) ?? 0m;
-            var recentAlerts = await db.Alerts.AsNoTracking().OrderByDescending(a => a.CreatedAt).Take(5).ToListAsync();
+            var totalProducts = await db.Products.CountAsync();
+            var totalInventoryValue = await db.Products.SumAsync(p => (decimal?)p.Price) ?? 0m;
+
+            var recentAlerts = await db.Alerts.AsNoTracking()
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
             var topCategories = await db.Products.AsNoTracking()
                 .GroupBy(p => p.Category ?? "Uncategorized")
-                .Select(g => new { Category = g.Key, Count = g.Count(), Value = g.Sum(p => p.Price) })
-                .OrderByDescending(x => x.Count).Take(5).ToListAsync();
+                .Select(g => new
+                {
+                    Category = g.Key,
+                    Count = g.Count(),
+                    Value = g.Sum(x => x.Price)
+                })
+                .OrderByDescending(x => x.Count)
+                .Take(5)
+                .ToListAsync();
 
-            return Results.Ok(new { totalProducts = total, totalInventoryValue = totalValue, recentAlerts, topCategories });
+            return Results.Ok(new { totalProducts, totalInventoryValue, recentAlerts, topCategories });
         });
+
+        using (var scope = app.Services.CreateScope())
+        {
+            var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+            var adminEmail = "admin@demo.local";
+            var adminPass = "Admin123!";
+
+            if (!await roleMgr.RoleExistsAsync("Admin"))
+                await roleMgr.CreateAsync(new IdentityRole("Admin"));
+            if (!await roleMgr.RoleExistsAsync("Owner"))
+                await roleMgr.CreateAsync(new IdentityRole("Owner"));
+
+            var admin = await userMgr.FindByEmailAsync(adminEmail);
+            if (admin == null)
+            {
+                admin = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
+                await userMgr.CreateAsync(admin, adminPass);
+                await userMgr.AddToRoleAsync(admin, "Admin");
+                await userMgr.AddToRoleAsync(admin, "Owner");
+            }
+        }
 
         app.Run();
     }

@@ -8,7 +8,7 @@
 
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <div class="h6 text-muted">Total Products</div>
                 <div class="h3">@Model.TotalProducts</div>
@@ -16,7 +16,7 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <div class="h6 text-muted">Inventory Value</div>
                 <div class="h3">@Model.TotalValue.ToString("0.00")</div>
@@ -24,11 +24,11 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <div class="h6 text-muted">Exports</div>
                 <a class="btn btn-sm btn-outline-primary me-2" href="/api/products/export.csv">Products CSV</a>
-                <a class="btn btn-sm btn-outline-primary me-2" href="/api/products/export.pdf">Products PDF</a>
+                <a class="btn btn-sm btn-outline-primary" href="/api/products/export.pdf">Products PDF</a>
             </div>
         </div>
     </div>
@@ -36,11 +36,13 @@
 
 <div class="row g-3">
     <div class="col-md-7">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <h5 class="card-title">Top Categories</h5>
                 <table class="table table-sm">
-                    <thead><tr><th>Category</th><th>Count</th><th>Value</th></tr></thead>
+                    <thead>
+                        <tr><th>Category</th><th>Count</th><th>Value</th></tr>
+                    </thead>
                     <tbody>
                         @foreach (var c in Model.TopCategories)
                         {
@@ -56,18 +58,25 @@
         </div>
     </div>
     <div class="col-md-5">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <h5 class="card-title">Recent Alerts</h5>
-                <ul class="list-group">
-                    @foreach (var a in Model.RecentAlerts)
-                    {
-                        <li class="list-group-item">
-                            <div class="small text-muted">@a.CreatedAt</div>
-                            <div>@a.Message</div>
-                        </li>
-                    }
-                </ul>
+                @if (Model.RecentAlerts.Count == 0)
+                {
+                    <div class="text-muted">No alerts yet.</div>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (var a in Model.RecentAlerts)
+                        {
+                            <li class="list-group-item">
+                                <div class="small text-muted">@a.CreatedAt</div>
+                                <div>@a.Message</div>
+                            </li>
+                        }
+                    </ul>
+                }
             </div>
         </div>
     </div>

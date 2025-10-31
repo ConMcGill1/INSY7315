@@ -1,0 +1,40 @@
+﻿@page
+@model INSY7315.Pages.AlertsModel
+@{
+    ViewData["Title"] = "Alerts";
+}
+
+<h2>Alerts</h2>
+
+@if (Model.Alerts.Count == 0)
+{
+    <div class="alert alert-info">No alerts yet.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>When</th>
+                <th>ProductId</th>
+                <th>Old</th>
+                <th>New</th>
+                <th>Δ %</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Alerts)
+            {
+                <tr>
+                    <td class="text-nowrap">@a.CreatedAt.ToString("u")</td>
+                    <td>@a.ProductId</td>
+                    <td>@a.OldPrice.ToString("0.00")</td>
+                    <td>@a.NewPrice.ToString("0.00")</td>
+                    <td>@a.DeltaPercent.ToString("0.##")</td>
+                    <td>@a.Message</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

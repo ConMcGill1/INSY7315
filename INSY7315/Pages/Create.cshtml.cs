@@ -19,8 +19,20 @@ namespace INSY7315.Pages
         {
             if (!ModelState.IsValid) return Page();
 
+            Product.CreatedOn = DateTime.UtcNow;
             _ctx.Products.Add(Product);
             await _ctx.SaveChangesAsync();
+
+            _ctx.PriceHistories.Add(new PriceHistory
+            {
+                ProductId = Product.Id,
+                OldPrice = Product.Price,
+                NewPrice = Product.Price,
+                ChangedOn = DateTime.UtcNow
+            });
+            await _ctx.SaveChangesAsync();
+
+            TempData["Message"] = "Product created.";
             return RedirectToPage("Index");
         }
     }

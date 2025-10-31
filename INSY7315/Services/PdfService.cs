@@ -7,6 +7,8 @@ namespace INSY7315.Services
 {
     public class PdfService
     {
+        private static string Title(string main) => $"Inventory Tracker · {main}";
+
         public byte[] BuildProductsPdf(IEnumerable<Product> products)
         {
             QuestPDF.Settings.License = LicenseType.Community;
@@ -16,8 +18,12 @@ namespace INSY7315.Services
             {
                 c.Page(p =>
                 {
-                    p.Margin(36);
-                    p.Header().Text("Products").SemiBold().FontSize(18);
+                    p.Margin(30);
+                    p.Header().Row(r =>
+                    {
+                        r.RelativeItem().Text(Title("Products")).SemiBold().FontSize(16);
+                        r.ConstantItem(120).AlignRight().Text(DateTime.UtcNow.ToString("u")).FontSize(9);
+                    });
                     p.Content().Table(t =>
                     {
                         t.ColumnsDefinition(cols =>
@@ -37,41 +43,49 @@ namespace INSY7315.Services
                             h.Cell().Text("Owner").SemiBold();
                             h.Cell().Text("Category").SemiBold();
                             h.Cell().Text("Model").SemiBold();
-                            h.Cell().AlignRight().Text("Price").SemiBold();
+                            h.Cell().Text("Price").SemiBold();
                         });
 
-                        int i = 1;
+                        var idx = 1;
                         foreach (var p in list)
                         {
-                            t.Cell().Text(i++.ToString());
+                            t.Cell().Text(idx++.ToString());
                             t.Cell().Text(p.Name);
                             t.Cell().Text(p.Owner);
                             t.Cell().Text(p.Category ?? "");
                             t.Cell().Text(p.Model ?? "");
-                            t.Cell().AlignRight().Text(p.Price.ToString("0.00"));
+                            t.Cell().Text(p.Price.ToString("0.00"));
                         }
                     });
-                    p.Footer().AlignRight().Text(DateTime.UtcNow.ToString("u"));
+                    p.Footer().AlignRight().Text(x =>
+                    {
+                        x.Span("Generated ").FontSize(9);
+                        x.Span(DateTime.UtcNow.ToString("u")).FontSize(9);
+                    });
                 });
             }).GeneratePdf();
         }
 
-        public byte[] BuildHistoryPdf(Product product, IEnumerable<PriceHistory> history)
+        public byte[] BuildProductHistoryPdf(Product product, IEnumerable<PriceHistory> history)
         {
             QuestPDF.Settings.License = LicenseType.Community;
-            var list = history.OrderByDescending(x => x.ChangedOn).ToList();
+            var list = history.ToList();
 
             return Document.Create(c =>
             {
                 c.Page(p =>
                 {
-                    p.Margin(36);
-                    p.Header().Text($"Price History — {product.Name} (Id {product.Id})").SemiBold().FontSize(18);
+                    p.Margin(30);
+                    p.Header().Row(r =>
+                    {
+                        r.RelativeItem().Text(Title($"History · {product.Name} (#{product.Id})")).SemiBold().FontSize(16);
+                        r.ConstantItem(120).AlignRight().Text(DateTime.UtcNow.ToString("u")).FontSize(9);
+                    });
                     p.Content().Table(t =>
                     {
                         t.ColumnsDefinition(cols =>
                         {
-                            cols.RelativeColumn(2);
+                            cols.RelativeColumn();
                             cols.RelativeColumn();
                             cols.RelativeColumn();
                         });
@@ -90,7 +104,11 @@ namespace INSY7315.Services
                             t.Cell().Text(h.NewPrice.ToString("0.00"));
                         }
                     });
-                    p.Footer().AlignRight().Text(DateTime.UtcNow.ToString("u"));
+                    p.Footer().AlignRight().Text(x =>
+                    {
+                        x.Span("Generated ").FontSize(9);
+                        x.Span(DateTime.UtcNow.ToString("u")).FontSize(9);
+                    });
                 });
             }).GeneratePdf();
         }
