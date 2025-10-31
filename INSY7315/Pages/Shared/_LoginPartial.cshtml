@@ -2,8 +2,12 @@
 @inject SignInManager<INSY7315.Models.ApplicationUser> SignInManager
 @inject UserManager<INSY7315.Models.ApplicationUser> UserManager
 
+@* This partial view handles the login and logout section in the navbar *@
+@* It shows a greeting and logout button if a user is signed in, or a login button if not *@
+
 @if (SignInManager.IsSignedIn(User))
 {
+    @* Display username and a logout button when logged in *@
     <span class="navbar-text me-2">Hello, @User.Identity?.Name</span>
     <form method="post" asp-area="Identity" asp-page="/Account/Logout">
         <button type="submit" class="btn btn-sm btn-outline-light">Logout</button>
@@ -11,5 +15,6 @@
 }
 else
 {
+    @* Display login button when not signed in *@
     <a class="btn btn-sm btn-outline-light" asp-area="Identity" asp-page="/Account/Login">Login</a>
 }

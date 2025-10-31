@@ -6,36 +6,39 @@ using INSY7315.Models;
 
 namespace INSY7315.Pages
 {
+    // Page model for listing and filtering products
     public class IndexModel : PageModel
     {
         private readonly AppDbContext _ctx;
         public IndexModel(AppDbContext ctx) => _ctx = ctx;
 
+        // List of products to display on the page
         public IList<Product> Product { get; set; } = new List<Product>();
 
-     
-        [BindProperty(SupportsGet = true)] public string? Q { get; set; }
-        [BindProperty(SupportsGet = true)] public string? Category { get; set; }
-        [BindProperty(SupportsGet = true)] public string? Model { get; set; }
-        [BindProperty(SupportsGet = true)] public decimal? MinPrice { get; set; }
-        [BindProperty(SupportsGet = true)] public decimal? MaxPrice { get; set; }
-        [BindProperty(SupportsGet = true)] public DateTime? CreatedFrom { get; set; }
-        [BindProperty(SupportsGet = true)] public DateTime? CreatedTo { get; set; }
+        // --- Filter parameters bound from query string ---
+        [BindProperty(SupportsGet = true)] public string? Q { get; set; }          // Search text
+        [BindProperty(SupportsGet = true)] public string? Category { get; set; }   // Category filter
+        [BindProperty(SupportsGet = true)] public string? Model { get; set; }      // Model filter
+        [BindProperty(SupportsGet = true)] public decimal? MinPrice { get; set; }  // Minimum price
+        [BindProperty(SupportsGet = true)] public decimal? MaxPrice { get; set; }  // Maximum price
+        [BindProperty(SupportsGet = true)] public DateTime? CreatedFrom { get; set; } // Created date range (from)
+        [BindProperty(SupportsGet = true)] public DateTime? CreatedTo { get; set; }   // Created date range (to)
 
-    
-        [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
-        public int TotalPages { get; set; }
+        // --- Pagination properties ---
+        [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;   // Current page
+        public int TotalPages { get; set; }                                           // Total number of pages
 
- 
-        [BindProperty(SupportsGet = true)] public string? SortBy { get; set; }   
-        [BindProperty(SupportsGet = true)] public string? SortDir { get; set; }  
+        // --- Sorting properties ---
+        [BindProperty(SupportsGet = true)] public string? SortBy { get; set; }  // Column to sort by
+        [BindProperty(SupportsGet = true)] public string? SortDir { get; set; } // Direction (asc/desc)
 
+        // Called when the page is loaded
         public async Task OnGetAsync()
         {
-            const int pageSize = 10;
+            const int pageSize = 10; // Number of items per page
             var query = _ctx.Products.AsNoTracking().AsQueryable();
 
-            
+            // --- Apply search filter ---
             if (!string.IsNullOrWhiteSpace(Q))
             {
                 var q = Q.Trim();
@@ -47,6 +50,7 @@ namespace INSY7315.Pages
                     p.Id.ToString() == q);
             }
 
+            // --- Apply individual filters ---
             if (!string.IsNullOrWhiteSpace(Category))
                 query = query.Where(p => p.Category == Category);
 
@@ -58,11 +62,12 @@ namespace INSY7315.Pages
             if (CreatedFrom is not null) query = query.Where(p => p.CreatedOn >= CreatedFrom);
             if (CreatedTo is not null) query = query.Where(p => p.CreatedOn <= CreatedTo);
 
-        
+            // --- Sorting setup ---
             var by = (SortBy ?? "name").Trim().ToLowerInvariant();
             var dir = (SortDir ?? "asc").Trim().ToLowerInvariant();
             if (dir != "asc" && dir != "desc") dir = "asc";
 
+            // --- Apply sorting based on selected column ---
             query = (by, dir) switch
             {
                 ("price", "asc") => query.OrderBy(p => p.Price).ThenBy(p => p.Id),
@@ -86,12 +91,13 @@ namespace INSY7315.Pages
                 ("id", "asc") => query.OrderBy(p => p.Id),
                 ("id", "desc") => query.OrderByDescending(p => p.Id),
 
-                _ => query.OrderBy(p => p.Name).ThenBy(p => p.Id) 
+                _ => query.OrderBy(p => p.Name).ThenBy(p => p.Id)
             };
 
-           
+            // --- Pagination logic ---
             var count = await query.CountAsync();
             TotalPages = (int)Math.Ceiling(count / (double)pageSize);
+
             if (PageNumber < 1) PageNumber = 1;
             if (PageNumber > TotalPages && TotalPages > 0) PageNumber = TotalPages;
 
@@ -101,12 +107,13 @@ namespace INSY7315.Pages
                 .ToListAsync();
         }
 
-       
+        // Determines next sort direction for a column
         public string NextDir(string column) =>
             string.Equals(SortBy, column, StringComparison.OrdinalIgnoreCase) &&
             string.Equals(SortDir, "asc", StringComparison.OrdinalIgnoreCase)
                 ? "desc" : "asc";
 
+        // Shows small arrow beside the sorted column
         public string ArrowFor(string column)
         {
             if (!string.Equals(SortBy, column, StringComparison.OrdinalIgnoreCase)) return "";

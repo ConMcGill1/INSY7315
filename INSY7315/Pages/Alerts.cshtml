@@ -1,17 +1,20 @@
 ﻿@page
 @model INSY7315.Pages.AlertsModel
 @{
+    // Page title displayed in the browser tab
     ViewData["Title"] = "Alerts";
 }
 
 <h2>Alerts</h2>
 
+@* If there are no alerts, show a message to the user *@
 @if (Model.Alerts.Count == 0)
 {
     <div class="alert alert-info">No alerts yet.</div>
 }
 else
 {
+    @* Table showing all alerts when there are entries *@
     <table class="table table-striped">
         <thead>
             <tr>
@@ -24,6 +27,7 @@ else
             </tr>
         </thead>
         <tbody>
+            @* Loop through each alert and show its details *@
             @foreach (var a in Model.Alerts)
             {
                 <tr>

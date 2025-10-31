@@ -15,9 +15,11 @@ public partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // Flags used to tweak behaviour per environment
         var isTesting = builder.Environment.IsEnvironment("Test") || builder.Environment.IsEnvironment("Testing");
         var isProduction = builder.Environment.IsProduction();
 
+        // Razor Pages + auth rules (home + privacy are public)
         builder.Services.AddRazorPages(options =>
         {
             options.Conventions.AuthorizeFolder("/");
@@ -25,6 +27,7 @@ public partial class Program
             options.Conventions.AllowAnonymousToPage("/Privacy");
         });
 
+        // Database setup (in-memory for tests, SQL Server otherwise)
         if (isTesting)
         {
             builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("TestDb"));
@@ -35,7 +38,7 @@ public partial class Program
                 opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
         }
 
-        
+        // ASP.NET Identity with roles (password rules simplified for demo)
         builder.Services
         .AddDefaultIdentity<ApplicationUser>(opts =>
         {
@@ -46,25 +49,25 @@ public partial class Program
             opts.Password.RequireDigit = true;
             opts.Lockout.MaxFailedAccessAttempts = 5;
         })
-        .AddRoles<IdentityRole>()                   
-        .AddEntityFrameworkStores<AppDbContext>();
+        .AddRoles<IdentityRole>()                    // enable role-based auth
+        .AddEntityFrameworkStores<AppDbContext>();   // store identity in our DB
 
-       
+        // CSRF tokens for API writes (validated via custom endpoint filter below)
         builder.Services.AddAntiforgery(options =>
         {
             options.HeaderName = "RequestVerificationToken";
         });
 
-        
+        // Domain services (price-change threshold comes from config, default 10%)
         var threshold = builder.Configuration.GetValue<decimal>("Alerts:PriceChangePercent", 10m);
         builder.Services.AddScoped(sp => new PriceChangeService(sp.GetRequiredService<AppDbContext>(), threshold));
         builder.Services.AddScoped<PdfService>();
 
-      
+        // Swagger for API docs (dev/non-prod only)
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        
+        // Simple write-rate limiting for APIs (protects server from abuse)
         builder.Services.AddRateLimiter(options =>
         {
             options.AddFixedWindowLimiter("apiWrites", o =>
@@ -78,12 +81,14 @@ public partial class Program
 
         var app = builder.Build();
 
+        // Error handling + HSTS in non-dev
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
 
+        // Enable Swagger UI except in production
         if (!isProduction)
         {
             app.UseSwagger();
@@ -98,12 +103,15 @@ public partial class Program
         app.UseAuthorization();
         app.UseRateLimiter();
 
+        // Razor Pages endpoints
         app.MapRazorPages();
 
+        // ----- Minimal API setup (with optional production-only protections) -----
         var antiforgery = app.Services.GetRequiredService<IAntiforgery>();
         var csrfFilter = new CsrfValidateFilter(antiforgery);
         var api = app.MapGroup("/api");
 
+        // In production, require auth + rate limit + CSRF validation on API writes
         if (isProduction)
         {
             api.RequireAuthorization()
@@ -111,18 +119,23 @@ public partial class Program
                .AddEndpointFilter(csrfFilter);
         }
 
-       
+        // ===== Products endpoints =====
+
+        // Get all products
         api.MapGet("/products", async (AppDbContext db) =>
             Results.Ok(await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync()));
 
+        // Get product by id
         api.MapGet("/products/{id:int}", async (int id, AppDbContext db) =>
         {
             var item = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
             return item is null ? Results.NotFound() : Results.Ok(item);
         });
 
+        // Create product (basic validation + seed initial price history)
         api.MapPost("/products", async (Product input, AppDbContext db) =>
         {
+            // Basic server-side validation
             if (string.IsNullOrWhiteSpace(input.Name) ||
                 string.IsNullOrWhiteSpace(input.Owner) ||
                 input.Price < 0)
@@ -135,11 +148,12 @@ public partial class Program
                 });
             }
 
+            // Create and save the product
             input.CreatedOn = DateTime.UtcNow;
             db.Products.Add(input);
-            await db.SaveChangesAsync(); 
+            await db.SaveChangesAsync(); // ensures Id is generated
 
-           
+            // Record the first price in history for consistency
             db.PriceHistories.Add(new PriceHistory
             {
                 ProductId = input.Id,
@@ -152,11 +166,13 @@ public partial class Program
             return Results.Created($"/api/products/{input.Id}", input);
         });
 
+        // Update product (captures price changes, triggers alerts)
         api.MapPut("/products/{id:int}", async (int id, Product patch, AppDbContext db, PriceChangeService pcs) =>
         {
             var entity = await db.Products.SingleOrDefaultAsync(p => p.Id == id);
             if (entity is null) return Results.NotFound();
 
+            // Validation
             if (string.IsNullOrWhiteSpace(patch.Name) ||
                 string.IsNullOrWhiteSpace(patch.Owner) ||
                 patch.Price < 0)
@@ -169,14 +185,15 @@ public partial class Program
                 });
             }
 
+            // Update fields
             var oldPrice = entity.Price;
-
             entity.Name = patch.Name.Trim();
             entity.Owner = patch.Owner.Trim();
             entity.Price = patch.Price;
             entity.Model = patch.Model?.Trim();
             entity.Category = patch.Category?.Trim();
 
+            // If price changed, add history and run alert logic
             if (entity.Price != oldPrice)
             {
                 db.PriceHistories.Add(new PriceHistory
@@ -193,6 +210,7 @@ public partial class Program
             return Results.Ok(entity);
         });
 
+        // Delete product
         api.MapDelete("/products/{id:int}", async (int id, AppDbContext db) =>
         {
             var entity = await db.Products.SingleOrDefaultAsync(p => p.Id == id);
@@ -202,6 +220,7 @@ public partial class Program
             return Results.NoContent();
         });
 
+        // Search products by ranges (simple filter endpoint)
         api.MapGet("/products/search", async (
             decimal? minPrice, decimal? maxPrice,
             DateTime? createdFrom, DateTime? createdTo,
@@ -215,7 +234,9 @@ public partial class Program
             return Results.Ok(await q.OrderBy(p => p.Id).ToListAsync());
         });
 
-        // ===== Exports =====
+        // ===== Export endpoints =====
+
+        // Products → PDF
         api.MapGet("/products/export.pdf", async (AppDbContext db, PdfService pdf) =>
         {
             var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
@@ -223,6 +244,7 @@ public partial class Program
             return Results.File(bytes, "application/pdf", "products.pdf");
         });
 
+        // Single product history → PDF
         api.MapGet("/products/{id:int}/history/export.pdf", async (int id, AppDbContext db, PdfService pdf) =>
         {
             var product = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id);
@@ -235,6 +257,7 @@ public partial class Program
             return Results.File(bytes, "application/pdf", $"product_{id}_history.pdf");
         });
 
+        // Products → CSV
         api.MapGet("/products/export.csv", async (AppDbContext db) =>
         {
             var items = await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
@@ -257,6 +280,7 @@ public partial class Program
             return Results.Text(sb.ToString(), "text/csv", Encoding.UTF8);
         });
 
+        // Single product history → CSV
         api.MapGet("/products/{id:int}/history/export.csv", async (int id, AppDbContext db) =>
         {
             var hist = await db.PriceHistories.AsNoTracking().Where(h => h.ProductId == id)
@@ -271,7 +295,9 @@ public partial class Program
             return Results.Text(sb.ToString(), "text/csv", Encoding.UTF8);
         });
 
-        
+        // ===== Alerts + summary endpoints =====
+
+        // Recent alerts (top 100)
         api.MapGet("/alerts", async (AppDbContext db) =>
         {
             var list = await db.Alerts.AsNoTracking()
@@ -281,6 +307,7 @@ public partial class Program
             return Results.Ok(list);
         });
 
+        // Simple dashboard summary for API consumers (counts, value, alerts, categories)
         api.MapGet("/reports/summary", async (AppDbContext db) =>
         {
             var totalProducts = await db.Products.CountAsync();
@@ -306,6 +333,7 @@ public partial class Program
             return Results.Ok(new { totalProducts, totalInventoryValue, recentAlerts, topCategories });
         });
 
+        // ----- Admin seeding (creates default admin + roles on first run) -----
         using (var scope = app.Services.CreateScope())
         {
             var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -333,6 +361,7 @@ public partial class Program
     }
 }
 
+// CSRF endpoint filter: validates antiforgery token for write actions
 public sealed class CsrfValidateFilter : IEndpointFilter
 {
     private readonly IAntiforgery _antiforgery;
@@ -341,6 +370,8 @@ public sealed class CsrfValidateFilter : IEndpointFilter
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var http = context.HttpContext;
+
+        // Only validate for state-changing HTTP methods
         if (HttpMethods.IsPost(http.Request.Method) ||
             HttpMethods.IsPut(http.Request.Method) ||
             HttpMethods.IsDelete(http.Request.Method) ||
@@ -352,4 +383,5 @@ public sealed class CsrfValidateFilter : IEndpointFilter
     }
 }
 
+// Extra partial class to satisfy top-level Program patterns in some templates
 public partial class Program { }

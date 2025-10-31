@@ -1,11 +1,13 @@
 ﻿@page "{id:int}"
 @model INSY7315.Pages.HistoryModel
 @{
+    // Sets the page title for the browser
     ViewData["Title"] = "Price History";
 }
 
 <h2>Price History - @Model.Product.Name</h2>
 
+@* Displays a table showing all price changes for the selected product *@
 <table class="table table-striped">
     <thead>
         <tr>
@@ -26,4 +28,5 @@
     </tbody>
 </table>
 
+@* Button to return to the product details page *@
 <p><a class="btn btn-secondary" asp-page="/Details" asp-route-id="@Model.Product.Id">Back</a></p>

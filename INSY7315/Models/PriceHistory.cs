@@ -1,19 +1,28 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace INSY7315.Models;
-
-public class PriceHistory
+namespace INSY7315.Models
 {
-    public int Id { get; set; }
-    public int ProductId { get; set; }
+    // This class stores the price change history for each product
+    public class PriceHistory
+    {
+        // Unique ID for the record
+        public int Id { get; set; }
 
-    [Range(0, 1_000_000)]
-    public decimal OldPrice { get; set; }
+        // The ID of the product this history belongs to
+        public int ProductId { get; set; }
 
-    [Range(0, 1_000_000)]
-    public decimal NewPrice { get; set; }
+        // The previous price before the change
+        [Range(0, 1_000_000)]
+        public decimal OldPrice { get; set; }
 
-    public DateTime ChangedOn { get; set; } = DateTime.UtcNow;
+        // The new price after the change
+        [Range(0, 1_000_000)]
+        public decimal NewPrice { get; set; }
 
-    public Product Product { get; set; } = null!;
+        // The date and time when the price was changed
+        public DateTime ChangedOn { get; set; } = DateTime.UtcNow;
+
+        // Navigation property to link back to the Product table
+        public Product Product { get; set; } = null!;
+    }
 }

@@ -1,15 +1,18 @@
 ﻿@page "{id:int}"
 @model INSY7315.Pages.DeleteModel
 @{
+    // Sets the page title in the browser
     ViewData["Title"] = "Delete";
 }
 
 <h2>Delete Product</h2>
 
+@* Warning message asking the user to confirm deletion *@
 <div class="alert alert-warning">
     Are you sure you want to delete <strong>@Model.Product.Name</strong> (Id: @Model.Product.Id)?
 </div>
 
+@* Form to confirm or cancel the delete action *@
 <form method="post">
     <button class="btn btn-danger">Delete</button>
     <a class="btn btn-secondary" asp-page="/Index">Cancel</a>

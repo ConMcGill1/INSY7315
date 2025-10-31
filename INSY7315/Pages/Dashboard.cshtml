@@ -1,12 +1,15 @@
 ﻿@page
 @model INSY7315.Pages.DashboardModel
 @{
+    // Sets the title for the browser tab
     ViewData["Title"] = "Dashboard";
 }
 
 <h2>Dashboard</h2>
 
+@* Top summary cards showing overall statistics *@
 <div class="row g-3 mb-4">
+    @* Total number of products in the system *@
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-body">
@@ -15,6 +18,8 @@
             </div>
         </div>
     </div>
+
+    @* Displays the total value of all products combined *@
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-body">
@@ -23,6 +28,8 @@
             </div>
         </div>
     </div>
+
+    @* Provides quick export options for data *@
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-body">
@@ -34,7 +41,9 @@
     </div>
 </div>
 
+@* Section showing top categories and recent alerts *@
 <div class="row g-3">
+    @* Table listing top categories with product counts and values *@
     <div class="col-md-7">
         <div class="card h-100">
             <div class="card-body">
@@ -57,6 +66,8 @@
             </div>
         </div>
     </div>
+
+    @* List of the most recent alerts *@
     <div class="col-md-5">
         <div class="card h-100">
             <div class="card-body">
