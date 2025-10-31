@@ -1,0 +1,83 @@
+﻿@page
+@model INSY7315.Pages.Admin.UsersModel
+@{
+    // Page title displayed in the browser and layout
+    ViewData["Title"] = "Manage Users";
+}
+
+<h2>Manage Users</h2>
+
+@* --------------------------------------------
+   Display success message from TempData
+   (e.g., after adding or removing an admin role)
+--------------------------------------------- *@
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+@* ============================================
+   USER MANAGEMENT TABLE
+   --------------------------------------------
+   Displays all users along with:
+     • Their email
+     • Display Name
+     • Whether they are Admin
+     • Buttons to add/remove Admin role
+============================================= *@
+<table class="table table-striped align-middle">
+    <thead class="table-light">
+        <tr>
+            <th>Email</th>
+            <th>Display Name</th>
+            <th>Admin?</th>
+            <th class="text-end">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @* Loop through all user view models provided by the PageModel *@
+        @foreach (var u in Model.Users)
+        {
+            <tr>
+                @* User email displayed as unique identifier *@
+                <td>@u.Email</td>
+
+                @* Display "-" if DisplayName is null or blank *@
+                <td>@(string.IsNullOrWhiteSpace(u.DisplayName) ? "-" : u.DisplayName)</td>
+
+                @* Show "Yes" if user has admin privileges *@
+                <td>@(u.IsAdmin ? "Yes" : "No")</td>
+
+                @* Action buttons aligned to the right *@
+                <td class="text-end">
+
+                    @* ------------------------------
+                Add to Admin button
+                - Submits to OnPostAddAdmin handler
+                - Disabled if user is already admin
+                ------------------------------- *@
+                    <form method="post" class="d-inline" asp-page-handler="AddAdmin">
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button class="btn btn-sm btn-outline-primary"
+                        @(u.IsAdmin ? "disabled" : "")>
+                            Add to Admin
+                        </button>
+                    </form>
+
+                    @* ------------------------------
+                Remove Admin button
+                - Submits to OnPostRemoveAdmin handler
+                - Disabled if user is not admin
+                ------------------------------- *@
+                    <form method="post" class="d-inline" asp-page-handler="RemoveAdmin">
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button class="btn btn-sm btn-outline-danger"
+                        @(!u.IsAdmin ? "disabled" : "")>
+                            Remove Admin
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

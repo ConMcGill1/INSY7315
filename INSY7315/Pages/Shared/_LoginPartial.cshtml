@@ -1,20 +1,56 @@
-﻿@using Microsoft.AspNetCore.Identity
+﻿@* ==============================================================
+   LOGIN PARTIAL VIEW  (_LoginPartial.cshtml)
+   --------------------------------------------------------------
+   This partial is included in the site layout (_Layout.cshtml)
+   to display user-specific navigation items.
+   It dynamically shows:
+     • Greeting and Profile link for signed-in users.
+     • Admin link if the user has the "Admin" role.
+     • Login button when no user is signed in.
+   ============================================================= *@
+
+@using Microsoft.AspNetCore.Identity
 @inject SignInManager<INSY7315.Models.ApplicationUser> SignInManager
 @inject UserManager<INSY7315.Models.ApplicationUser> UserManager
 
-@* This partial view handles the login and logout section in the navbar *@
-@* It shows a greeting and logout button if a user is signed in, or a login button if not *@
-
+@* --------------------------------------------------------------
+   Signed-in user view
+   -------------------------------------------------------------- *@
 @if (SignInManager.IsSignedIn(User))
 {
-    @* Display username and a logout button when logged in *@
-    <span class="navbar-text me-2">Hello, @User.Identity?.Name</span>
-    <form method="post" asp-area="Identity" asp-page="/Account/Logout">
+    @* Fetch the current ApplicationUser record to access DisplayName *@
+    var me = await UserManager.GetUserAsync(User);
+
+    @* Choose friendly greeting name:
+       - Use DisplayName if set,
+       - Otherwise fall back to Identity.Name (email or username). *@
+    var friendly = string.IsNullOrWhiteSpace(me?.DisplayName)
+        ? User.Identity?.Name
+        : me!.DisplayName;
+
+    @* Display a personalized greeting in the navbar *@
+    <span class="navbar-text me-2">Hello, @friendly</span>
+
+    @* Profile link (available to all authenticated users) *@
+    <a class="btn btn-sm btn-outline-light me-2" asp-page="/Account/Profile">Profile</a>
+
+    @* Admin panel link (visible only to users in the Admin role) *@
+    @if (User.IsInRole("Admin"))
+    {
+        <a class="btn btn-sm btn-warning me-2" asp-page="/Admin/Users">Admin</a>
+    }
+
+    @* Logout form (POST required for CSRF protection)
+       Uses Identity’s built-in Logout page handler. *@
+    <form method="post" asp-area="Identity" asp-page="/Account/Logout" class="d-inline">
         <button type="submit" class="btn btn-sm btn-outline-light">Logout</button>
     </form>
 }
+@* --------------------------------------------------------------
+   Guest (not signed-in) view
+   -------------------------------------------------------------- *@
 else
 {
-    @* Display login button when not signed in *@
+    @* Only a Login button is shown to unauthenticated visitors *@
     <a class="btn btn-sm btn-outline-light" asp-area="Identity" asp-page="/Account/Login">Login</a>
 }

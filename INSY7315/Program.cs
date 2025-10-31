@@ -8,6 +8,7 @@ using INSY7315.Data;
 using INSY7315.Models;
 using INSY7315.Services;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Data.Common;
 
 public partial class Program
 {
@@ -80,8 +81,18 @@ public partial class Program
         });
 
         var app = builder.Build();
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Error handling + HSTS in non-dev
+            // LOG which DB/server EF is actually using:
+            DbConnection conn = db.Database.GetDbConnection();
+            Console.WriteLine($"[DB] Using -> DataSource={conn.DataSource}  Database={conn.Database}");
+
+            // Ensure the schema is up-to-date before Identity hits the DB:
+            await db.Database.MigrateAsync();
+        }
+        // Error handling + HSTS in non-dev00000000000000
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");

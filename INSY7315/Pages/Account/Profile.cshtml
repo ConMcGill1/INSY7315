@@ -1,0 +1,97 @@
+﻿@page
+@model INSY7315.Pages.Account.ProfileModel
+@{
+    // Page title shown in browser and layout
+    ViewData["Title"] = "My Profile";
+}
+
+<h2>My Profile</h2>
+
+@* Show a success alert if TempData contains a message (e.g., "Profile updated" or "Password changed") *@
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+<div class="row g-4">
+    <!-- =========================================
+         LEFT COLUMN: PROFILE DETAILS SECTION
+         ========================================= -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Profile Details</h5>
+
+                @* Validation summary for this form only.
+                Displays validation or update errors for the DisplayName form. *@
+                <div asp-validation-summary="All" class="text-danger"></div>
+
+                @* Form for updating Display Name (does NOT require password) *@
+                <form method="post" asp-page-handler="SaveProfile">
+                    @* Email field is shown but read-only since users cannot edit their login email *@
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input class="form-control" value="@Model.Email" disabled />
+                    </div>
+
+                    @* Editable Display Name field *@
+                    <div class="mb-3">
+                        <label asp-for="Profile.DisplayName" class="form-label"></label>
+                        <input asp-for="Profile.DisplayName" class="form-control" />
+                        <span asp-validation-for="Profile.DisplayName" class="text-danger"></span>
+                    </div>
+
+                    @* Save button triggers POST to the SaveProfile handler *@
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         RIGHT COLUMN: CHANGE PASSWORD SECTION
+         ========================================= -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Change Password</h5>
+
+                @* Validation summary for password form only
+                Shows errors like "Current password incorrect" or validation failures *@
+                <div asp-validation-summary="All" class="text-danger"></div>
+
+                @* Form for password change — posts to ChangePassword handler *@
+                <form method="post" asp-page-handler="ChangePassword">
+                    <!-- Current password -->
+                    <div class="mb-3">
+                        <label asp-for="Password.CurrentPassword" class="form-label"></label>
+                        <input asp-for="Password.CurrentPassword" class="form-control" />
+                        <span asp-validation-for="Password.CurrentPassword" class="text-danger"></span>
+                    </div>
+
+                    <!-- New password -->
+                    <div class="mb-3">
+                        <label asp-for="Password.NewPassword" class="form-label"></label>
+                        <input asp-for="Password.NewPassword" class="form-control" />
+                        <span asp-validation-for="Password.NewPassword" class="text-danger"></span>
+                    </div>
+
+                    <!-- Confirm new password -->
+                    <div class="mb-3">
+                        <label asp-for="Password.ConfirmPassword" class="form-label"></label>
+                        <input asp-for="Password.ConfirmPassword" class="form-control" />
+                        <span asp-validation-for="Password.ConfirmPassword" class="text-danger"></span>
+                    </div>
+
+                    @* Button triggers ChangePassword handler (separate POST) *@
+                    <button type="submit" class="btn btn-outline-primary">Change Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @* Include client-side validation scripts (jQuery Validate + Unobtrusive) *@
+    <partial name="_ValidationScriptsPartial" />
+}
