@@ -1,87 +1,159 @@
 # Inventory Management System (Core Three)
 
 ## Overview
-This project is an **Inventory Management System** built using **ASP.NET Core MVC**, **Entity Framework Core**, and **SQL Server**.  
-It allows an electronics/furniture shop owner to manage products, track price history, search/filter inventory efficiently, and now includes secondary features such as export and advanced search.
+This project is an **Inventory Management System** built using **ASP.NET Core Razor Pages**, **Entity Framework Core**, and **SQL Server**.  
+It allows a shop owner to manage products, track price history, monitor price alerts, and export data to CSV or PDF.  
+The system now includes filtering, authentication, rate limiting, and anti-forgery protection for secure API use.
+
+---
 
 ## Features Implemented
 
-### Core Features (Sprint 5)
-- Add new products (Name, Price, Owner, optional Model & Category)
-- View, edit, and delete products
-- Search products by Name, Category, or Model
-- Track price changes with a Price History table
-- Unit and integration tests for core functionality
+### 🧩 Core Features (Sprint 5)
+- Add, edit, view, and delete products.
+- Each product includes: **Name**, **Owner**, **Price**, and optional **Model** / **Category**.
+- **Search** and **filter** products by text, category, or model.
+- Track **price changes** through a dedicated `PriceHistory` table.
+- **Pagination** and **sorting** by ID, price, category, date, etc.
+- Unit and integration tests for key features.
 
-### Secondary Features (Sprint 7)
-- Export product list or price history to **CSV/PDF**
-- Price change alerts (notifications when price exceeds a threshold)
-- Advanced search filters (by price range, date added, or category)
-- Authentication and role-based access (if implemented)
-- Regression testing of existing features
+### 📦 Secondary Features (Sprint 7)
+- **Export products or history** to **CSV** and **PDF** using QuestPDF.
+- **Price alerts** automatically generated when price changes exceed a set threshold.
+- **Advanced filtering** (by price range, category, or created date).
+- Dedicated **details** and **history** pages for each product.
+- Integration of a **PriceChangeService** to handle alerts automatically.
 
-### Security + DevOps Enhancements (Sprint 8)
+### 🔒 Security & API Hardening (Sprint 8)
+- **Global CSRF protection** on API write actions.
+- **Rate limiting** for API endpoints (30 requests/minute).
+- **HTTPS redirection** and **HSTS** enabled in production.
+- **ASP.NET Identity** with roles (`Admin`, `Owner`).
+- **Improved password policy** (min 8 chars, digits required, lockout after failed attempts).
+- API group secured with **authorization** and **antiforgery validation**.
+- **Swagger** enabled in development for testing API endpoints.
 
-- HSTS + HTTPS redirection enforced in production
-- Secure cookies with shorter expiry and sliding sessions
-- Global Anti-Forgery Tokens to prevent CSRF attacks
-- Improved Identity defaults and hardened password policy
-- Static code analysis & security scanning added to DevOps pipeline (GitHub Actions)
-- Cloud deployment ready (production connection string in appsettings.Production.json)
-
-### DevOps Pipeline (Sprint 8)
-
-- CI/CD: GitHub Actions build + test + CodeQL security scan.
-- Static Code Analysis: checks for code quality, vulnerabilities, and best practices.
-- Automated Tests: runs unit and integration tests on each push.
+### ⚙️ DevOps Pipeline (Sprint 8)
+- **GitHub Actions** workflow runs:
+  - Build & test for .NET 8
+  - CodeQL static analysis for security
+- Continuous Integration pipeline executes on every push/PR.
 - [![.NET Build & Test + CodeQL](https://github.com/<your-username>/<your-repo>/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/<your-username>/<your-repo>/actions/workflows/dotnet-ci.yml)
 
-## Technology Stack
-- **ASP.NET Core MVC 8**
+---
+
+## 🧠 Technology Stack
+- **ASP.NET Core 8 Razor Pages**
 - **Entity Framework Core (Code-First)**
-- **SQL Server**
-- **Bootstrap 5** (responsive UI)
-- **xUnit/MSTest/NUnit** (for unit/integration testing)
-- **GitHub Actions** (CI/CD with static code and security scans)
+- **SQL Server / InMemory (for testing)**
+- **Bootstrap 5** for responsive UI
+- **QuestPDF** for PDF exports
+- **xUnit / MSTest** for testing
+- **GitHub Actions** for CI/CD
 
-## Database Structure
+---
 
-**Products Table**
-- Id (PK)
-- Name (nvarchar(200), required)
-- Owner (nvarchar(100), required)
-- Price (decimal(18,2))
-- Category (nvarchar(100), optional)
-- Model (nvarchar(100), optional)
-- CreatedOn (datetime2)
+## 🧾 Database Structure
 
-**PriceHistories Table**
-- Id (PK)
-- ProductId (FK to Products)
-- OldPrice (decimal(18,2))
-- NewPrice (decimal(18,2))
-- ChangedOn (datetime2)
+### **Products**
+| Column | Type | Notes |
+|---------|------|-------|
+| Id | int | Primary Key |
+| Name | nvarchar(200) | Required |
+| Owner | nvarchar(100) | Required |
+| Category | nvarchar(100) | Optional |
+| Model | nvarchar(100) | Optional |
+| Price | decimal(18,2) | Required |
+| CreatedOn | datetime2 | Set when added |
 
-## Setup Instructions
+### **PriceHistories**
+| Column | Type | Notes |
+|---------|------|-------|
+| Id | int | Primary Key |
+| ProductId | int (FK) | Linked to Product |
+| OldPrice | decimal(18,2) | Previous price |
+| NewPrice | decimal(18,2) | Updated price |
+| ChangedOn | datetime2 | UTC timestamp |
 
-1. Clone the repository:
+### **Alerts**
+| Column | Type | Notes |
+|---------|------|-------|
+| Id | int | Primary Key |
+| ProductId | int (FK) | Linked to Product |
+| OldPrice | decimal(18,2) | Previous price |
+| NewPrice | decimal(18,2) | New price |
+| DeltaPercent | decimal(5,2) | Percentage change |
+| Message | nvarchar(max) | Human-readable alert text |
+| CreatedAt | datetime2 | UTC timestamp |
+
+---
+
+## 🧰 API Endpoints Summary
+
+| Endpoint | Method | Description |
+|-----------|---------|-------------|
+| `/api/products` | GET | List all products |
+| `/api/products/{id}` | GET | Get product by ID |
+| `/api/products` | POST | Add new product |
+| `/api/products/{id}` | PUT | Edit existing product |
+| `/api/products/{id}` | DELETE | Delete product |
+| `/api/products/search` | GET | Filter by price/date range |
+| `/api/products/export.csv` | GET | Export all products to CSV |
+| `/api/products/export.pdf` | GET | Export all products to PDF |
+| `/api/products/{id}/history/export.csv` | GET | Export a product’s price history to CSV |
+| `/api/products/{id}/history/export.pdf` | GET | Export a product’s price history to PDF |
+| `/api/alerts` | GET | View recent alerts |
+| `/api/reports/summary` | GET | Dashboard summary (total value, top categories, latest alerts) |
+
+---
+
+## 🚀 Setup Instructions
+
+1. **Clone the repository**
    ```bash
    git clone [repo-url]
    cd [repo-folder]
+   ```
 
-2. Update appsettings.json with your SQL Server connection string:
+2. **Update your SQL connection string**  
+   In `appsettings.json`:
+   ```json
    "ConnectionStrings": {
-    "DefaultConnection": "Server=YOUR_SERVER;Database=InventoryDB;Trusted_Connection=True;MultipleActiveResultSets=true"
+     "Default": "Server=YOUR_SERVER;Database=InventoryDB;Trusted_Connection=True;MultipleActiveResultSets=true"
    }
+   ```
 
-3. Run database migrations:
+3. **Apply database migrations**
+   ```bash
    dotnet ef database update
+   ```
 
-4. Run the application:
-  dotnet run
+4. **Run the application**
+   ```bash
+   dotnet run
+   ```
 
-5. Testing
-   Run unit tests:
+5. **Access the web UI**
+   - Navigate to `https://localhost:5001`
+   - Default admin credentials are created automatically:
+     - **Email:** admin@demo.local  
+     - **Password:** Admin123!
+
+6. **Run automated tests**
+   ```bash
    dotnet test
+   ```
+
+---
+
+## ✅ Summary
+The project now includes:
+- Full CRUD with validation
+- Price tracking and history
+- Alerts for significant price changes
+- CSV/PDF exports
+- Secure, rate-limited APIs
+- Authenticated Razor Pages UI
+- Ready-to-deploy production configuration
 
 
