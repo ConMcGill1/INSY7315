@@ -1,59 +1,104 @@
 # Inventory Management System (Core Three)
 
 ## Overview
-This project is an **Inventory Management System** built using **ASP.NET Core Razor Pages**, **Entity Framework Core**, and **SQL Server**.  
-It allows a shop owner to manage products, track price history, monitor price alerts, and export data to CSV or PDF.  
-The system now includes filtering, authentication, rate limiting, and anti-forgery protection for secure API use.
+This project is a **comprehensive Inventory Management System** built using **ASP.NET Core 8 Razor Pages**, **Entity Framework Core**, and **SQL Server**.  
+It enables shop owners to manage products, monitor prices, and track historical changes, while offering powerful **exporting, filtering, alerting, and authentication** capabilities.  
+It also includes **admin role management**, **user profiles**, **API endpoints with CSRF + rate limiting**, and **a modern, responsive interface**.
 
 ---
 
-## Features Implemented
+## 🎯 Key Objectives
+The system was designed for small-to-medium shops to streamline inventory tracking by providing:
+- A user-friendly web interface for managing stock and price history.
+- Secure access control through user roles (Admin, Owner).
+- Automated alerts for significant price changes.
+- Data export and integration-ready API endpoints.
 
-### 🧩 Core Features (Sprint 5)
-- Add, edit, view, and delete products.
-- Each product includes: **Name**, **Owner**, **Price**, and optional **Model** / **Category**.
-- **Search** and **filter** products by text, category, or model.
-- Track **price changes** through a dedicated `PriceHistory` table.
-- **Pagination** and **sorting** by ID, price, category, date, etc.
-- Unit and integration tests for key features.
+---
 
-### 📦 Secondary Features (Sprint 7)
-- **Export products or history** to **CSV** and **PDF** using QuestPDF.
-- **Price alerts** automatically generated when price changes exceed a set threshold.
-- **Advanced filtering** (by price range, category, or created date).
-- Dedicated **details** and **history** pages for each product.
-- Integration of a **PriceChangeService** to handle alerts automatically.
+## 🧩 Core Features
+### Inventory & Product Management
+- Add, edit, view, and delete products with validation.
+- Product fields: **Name**, **Owner**, **Price**, optional **Model** and **Category**.
+- **Real-time price tracking** with a dedicated `PriceHistory` table.
+- Sorting and pagination for long product lists.
+- Advanced search by name, category, model, price range, or created date.
 
-### 🔒 Security & API Hardening (Sprint 8)
-- **Global CSRF protection** on API write actions.
-- **Rate limiting** for API endpoints (30 requests/minute).
-- **HTTPS redirection** and **HSTS** enabled in production.
-- **ASP.NET Identity** with roles (`Admin`, `Owner`).
-- **Improved password policy** (min 8 chars, digits required, lockout after failed attempts).
-- API group secured with **authorization** and **antiforgery validation**.
-- **Swagger** enabled in development for testing API endpoints.
+### Price History & Alerts
+- Automatic **PriceHistory** entries whenever prices are updated.
+- **Alert system** triggers when price changes exceed a configurable threshold (default: 10%).
+- Dedicated **Alerts page** and **Dashboard summaries** for tracking recent alerts and top categories.
 
-### ⚙️ DevOps Pipeline (Sprint 8)
-- **GitHub Actions** workflow runs:
-  - Build & test for .NET 8
-  - CodeQL static analysis for security
-- Continuous Integration pipeline executes on every push/PR.
-- [![.NET Build & Test + CodeQL](https://github.com/<your-username>/<your-repo>/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/<your-username>/<your-repo>/actions/workflows/dotnet-ci.yml)
+### Data Export
+- Export **Products** and **Price History** to:
+  - **CSV** (standard UTF-8)
+  - **PDF** (via QuestPDF library)
+- Exports preserve sorting and filtering context.
+
+### UI Enhancements
+- Clean, modern **Bootstrap 5** responsive layout.
+- Visual feedback (alerts, success toasts, pagination controls).
+- Role-aware navigation and user greetings.
+
+---
+
+## 👤 Identity & Role Management
+### Authentication
+- Built on **ASP.NET Core Identity** with user registration, login, and secure sessions.
+- **Password policy:** minimum 8 characters, includes digits, optional uppercase/non-alphanumeric.
+- **Lockout policy:** automatic lockout after 5 failed login attempts.
+
+### User Profiles
+- **Profile Page** where users can:
+  - Update **Display Name** (used for navbar greetings).
+  - Change password securely.
+- Independent validation for each form (no cross-validation errors).
+
+### Admin Management
+- Admin-only **Manage Users** page allows:
+  - Viewing all users with **Email**, **Display Name**, and **Admin role status**.
+  - Adding or removing Admin privileges dynamically.
+- Admin role created and assigned automatically on first run:
+  - Email: `admin@demo.local`
+  - Password: `Admin123!`
+  - Roles: `Admin`, `Owner`
+
+---
+
+## 🔒 Security & API Protection
+- **Global CSRF tokens** enforced on write operations (POST/PUT/PATCH/DELETE).
+- **Rate limiting** for API writes (30 requests/minute window).
+- **HSTS + HTTPS redirection** in production.
+- **Role-based authorization** for admin-only pages.
+- **Swagger** enabled only in Development for API testing.
+- Built-in **antiforgery validation** using endpoint filters.
+
+---
+
+## ⚙️ DevOps & Testing
+- CI pipeline (GitHub Actions) includes:
+  - Build, Test, and CodeQL static analysis.
+- Code-first EF migrations for schema control.
+- InMemory provider available for test mode.
+- `dotnet test` validates CRUD and alert logic.
 
 ---
 
 ## 🧠 Technology Stack
-- **ASP.NET Core 8 Razor Pages**
-- **Entity Framework Core (Code-First)**
-- **SQL Server / InMemory (for testing)**
-- **Bootstrap 5** for responsive UI
-- **QuestPDF** for PDF exports
-- **xUnit / MSTest** for testing
-- **GitHub Actions** for CI/CD
+| Layer | Technology |
+|--------|-------------|
+| **Frontend** | Razor Pages, Bootstrap 5 |
+| **Backend** | ASP.NET Core 8 |
+| **ORM** | Entity Framework Core (Code First) |
+| **Database** | SQL Server (LocalDB for dev) |
+| **Export** | QuestPDF, CSV builder |
+| **Authentication** | ASP.NET Core Identity |
+| **CI/CD** | GitHub Actions + CodeQL |
+| **Testing** | xUnit / MSTest / NUnit |
 
 ---
 
-## 🧾 Database Structure
+## 🧾 Database Design
 
 ### **Products**
 | Column | Type | Notes |
@@ -64,96 +109,124 @@ The system now includes filtering, authentication, rate limiting, and anti-forge
 | Category | nvarchar(100) | Optional |
 | Model | nvarchar(100) | Optional |
 | Price | decimal(18,2) | Required |
-| CreatedOn | datetime2 | Set when added |
+| CreatedOn | datetime2 | Auto-set |
 
 ### **PriceHistories**
 | Column | Type | Notes |
 |---------|------|-------|
-| Id | int | Primary Key |
-| ProductId | int (FK) | Linked to Product |
-| OldPrice | decimal(18,2) | Previous price |
-| NewPrice | decimal(18,2) | Updated price |
+| Id | int | PK |
+| ProductId | int (FK) | Linked to Products |
+| OldPrice | decimal(18,2) | Before change |
+| NewPrice | decimal(18,2) | After change |
 | ChangedOn | datetime2 | UTC timestamp |
 
 ### **Alerts**
 | Column | Type | Notes |
 |---------|------|-------|
-| Id | int | Primary Key |
-| ProductId | int (FK) | Linked to Product |
+| Id | int | PK |
+| ProductId | int (FK) | Linked to Products |
 | OldPrice | decimal(18,2) | Previous price |
 | NewPrice | decimal(18,2) | New price |
 | DeltaPercent | decimal(5,2) | Percentage change |
-| Message | nvarchar(max) | Human-readable alert text |
-| CreatedAt | datetime2 | UTC timestamp |
+| Message | nvarchar(max) | Alert message |
+| CreatedAt | datetime2 | UTC |
 
 ---
 
-## 🧰 API Endpoints Summary
+## 🌐 API Endpoints Summary
 
 | Endpoint | Method | Description |
 |-----------|---------|-------------|
 | `/api/products` | GET | List all products |
-| `/api/products/{id}` | GET | Get product by ID |
-| `/api/products` | POST | Add new product |
-| `/api/products/{id}` | PUT | Edit existing product |
+| `/api/products/{id}` | GET | Get single product |
+| `/api/products` | POST | Create new product |
+| `/api/products/{id}` | PUT | Update existing product |
 | `/api/products/{id}` | DELETE | Delete product |
 | `/api/products/search` | GET | Filter by price/date range |
 | `/api/products/export.csv` | GET | Export all products to CSV |
 | `/api/products/export.pdf` | GET | Export all products to PDF |
-| `/api/products/{id}/history/export.csv` | GET | Export a product’s price history to CSV |
-| `/api/products/{id}/history/export.pdf` | GET | Export a product’s price history to PDF |
+| `/api/products/{id}/history/export.csv` | GET | Export price history to CSV |
+| `/api/products/{id}/history/export.pdf` | GET | Export price history to PDF |
 | `/api/alerts` | GET | View recent alerts |
-| `/api/reports/summary` | GET | Dashboard summary (total value, top categories, latest alerts) |
+| `/api/reports/summary` | GET | Summary dashboard (totals, alerts, top categories) |
+
+---
+
+## 🧭 Navigation Pages Overview
+
+- **Index** – product list with search, filters, sorting, pagination.  
+- **Create/Edit/Delete** – full CRUD with validation and alert triggers.  
+- **Details/History** – individual product and its price changes.  
+- **Dashboard** – total counts, total inventory value, top categories, alerts.  
+- **Alerts** – shows all generated price alerts.  
+- **Profile** – edit display name and change password.  
+- **Admin → Users** – list all users and toggle Admin role.  
+- **Swagger (dev only)** – API documentation and testing portal.
 
 ---
 
 ## 🚀 Setup Instructions
 
-1. **Clone the repository**
-   ```bash
-   git clone [repo-url]
-   cd [repo-folder]
-   ```
+1️⃣ **Clone the repository**
+```bash
+git clone [repo-url]
+cd [repo-folder]
+```
 
-2. **Update your SQL connection string**  
-   In `appsettings.json`:
-   ```json
-   "ConnectionStrings": {
-     "Default": "Server=YOUR_SERVER;Database=InventoryDB;Trusted_Connection=True;MultipleActiveResultSets=true"
-   }
-   ```
+2️⃣ **Set connection string**
+Edit `appsettings.json`:
+```json
+"ConnectionStrings": {
+  "Default": "Server=(localdb)\mssqllocaldb;Database=INSY7315;Trusted_Connection=True;MultipleActiveResultSets=true"
+}
+```
 
-3. **Apply database migrations**
-   ```bash
-   dotnet ef database update
-   ```
+3️⃣ **Apply EF migrations**
+```bash
+dotnet ef database update
+```
 
-4. **Run the application**
-   ```bash
-   dotnet run
-   ```
+4️⃣ **Run the app**
+```bash
+dotnet run
+```
 
-5. **Access the web UI**
-   - Navigate to `https://localhost:5001`
-   - Default admin credentials are created automatically:
-     - **Email:** admin@demo.local  
-     - **Password:** Admin123!
+5️⃣ **Default credentials**
+- Email: `admin@demo.local`
+- Password: `Admin123!`
 
-6. **Run automated tests**
-   ```bash
-   dotnet test
-   ```
+6️⃣ **Run tests**
+```bash
+dotnet test
+```
 
 ---
 
-## ✅ Summary
-The project now includes:
-- Full CRUD with validation
-- Price tracking and history
-- Alerts for significant price changes
-- CSV/PDF exports
-- Secure, rate-limited APIs
-- Authenticated Razor Pages UI
-- Ready-to-deploy production configuration
+## 🧩 Common Issues
+
+### “Invalid column name 'DisplayName'”
+- Run migration again or ensure you’re using the correct database:
+```bash
+dotnet ef migrations add AddDisplayNameToUsers
+dotnet ef database update
+```
+
+### “Open DataReader error”
+- Occurs if EF tries to read users and roles simultaneously.
+- Fixed in Admin Users page by **prefetching all admins first**.
+
+---
+
+## ✅ Final Summary
+This project represents a **fully functional, secure, and production-ready inventory system** with:
+
+- CRUD operations and product tracking  
+- Automated alerts for significant price changes  
+- CSV/PDF data exports  
+- Authentication with roles (Admin, Owner)  
+- User profile editing (Display Name + Password)  
+- Admin role management dashboard  
+- Advanced filtering, sorting, pagination  
+- Secure APIs with rate limiting, CSRF, HTTPS, and Swagger in dev  
 
 
