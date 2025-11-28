@@ -22,6 +22,7 @@ The Inventory Management System provides a secure and efficient solution for sma
     *   **Admin Access**: Secured with credentials (`admin` / `Admin123!`).
     *   **Guest Access**: View-only mode without registration.
     *   **Sign Out**: Switch users easily from the dashboard.
+    *   **Profile**: Update Display Name and Password.
 *   **Product CRUD**: Add, View, Edit, Delete products with validation.
 *   **Price Change Tracking**: Automatically records price changes in `PriceHistory` table.
 *   **Search & Filter**: Search by Name, Category, or Model.
@@ -30,7 +31,7 @@ The Inventory Management System provides a secure and efficient solution for sma
 ### Secondary Features
 *   **Reports & Exports**: 
     *   **Storage Access**: Uses Android system picker to let users choose where to save files.
-    *   **Formats**: Export inventory as **Simulated PDF (.txt)** or **CSV**.
+    *   **Formats**: Export inventory as **Real PDF (.pdf)** or **CSV**.
 *   **Price Change Alerts/Validation**: Prevents price increases greater than 10% (aligned with backend rules).
 *   **Alerts System**: Dedicated view for low-stock items (Admin only).
 *   **User Management**: Admin can manage user roles (add/remove admin rights).
@@ -41,7 +42,7 @@ Primary tables:
 *   **Products** (`id`, `name`, `owner`, `price`, `category`, `model`, `lowStockThreshold`)
 *   **PriceHistories** (`id`, `productId`, `oldPrice`, `newPrice`, `changedOn`)
 *   **Alerts** (`id`, `productId`, `message`, `timestamp`)
-*   **Users** (`id`, `email`, `displayName`, `isAdmin`)
+*   **Users** (`id`, `email`, `passwordHash`, `displayName`, `isAdmin`)
 
 ## Tech Stack
 *   **Language**: Kotlin
@@ -69,10 +70,11 @@ Primary tables:
     *   Navigate to "Reports".
     *   Click "Export Report" or "Export CSV".
     *   **System Picker**: Choose a folder and filename to save the file securely.
-4.  **Admin Actions**:
-    *   **Dashboard**: Click the Home/Grid icon to view top stats.
-    *   **Alerts**: View low-stock warnings.
-    *   **Manage Users**: Grant/Revoke admin access via top bar menu.
+4.  **Profile & Admin Actions**:
+    *   **Profile**: Click your display name in the top bar to update profile or change password.
+    *   **Dashboard**: (Admin only) Click the Home/Grid icon to view top stats.
+    *   **Alerts**: (Admin only) View low-stock warnings.
+    *   **Manage Users**: (Admin only) Grant/Revoke admin access via top bar menu.
 
 ## Testing & Quality Assurance
 *   **Unit Testing**: `PriceChangeService` logic verified (10% threshold, ZAR formatting).

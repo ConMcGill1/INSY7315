@@ -29,15 +29,15 @@ fun ReportsScreen(
     val pdfService = remember { PdfService(context) }
     val products by viewModel.allProducts.collectAsState(initial = emptyList())
 
-    // Launcher for creating a text file (Simulated PDF)
+    // Launcher for creating a real PDF file
     val createDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/plain")
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri: Uri? ->
         if (uri != null) {
             if (pdfService.generateProductReport(products, uri)) {
-                Toast.makeText(context, "Report saved successfully!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "PDF Report saved successfully!", Toast.LENGTH_LONG).show()
             } else {
-                Toast.makeText(context, "Failed to save report.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Failed to save PDF report.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -70,11 +70,12 @@ fun ReportsScreen(
         
         Button(
             onClick = {
-                createDocumentLauncher.launch("inventory_report_${System.currentTimeMillis()}.txt")
+                // Using .pdf extension for real PDF
+                createDocumentLauncher.launch("inventory_report_${System.currentTimeMillis()}.pdf")
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Export Report (Simulated PDF)")
+            Text("Export Report (PDF)")
         }
         
         Spacer(modifier = Modifier.height(16.dp))

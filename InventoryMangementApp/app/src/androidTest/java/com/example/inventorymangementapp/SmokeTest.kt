@@ -22,6 +22,8 @@ class SmokeTest {
     @Test
     fun appLaunchesSuccessfully_showsLoginScreen() {
         // Check if the "Inventory Login" text is displayed
+        // Note: Title might be "Inventory Login" or "Register User" depending on state, but defaults to Login.
+        // Actually, logic defaults isRegisterMode=false, so "Inventory Login" is correct.
         composeTestRule.onNodeWithText("Inventory Login").assertIsDisplayed()
         
         // Check if the "Login" button exists
