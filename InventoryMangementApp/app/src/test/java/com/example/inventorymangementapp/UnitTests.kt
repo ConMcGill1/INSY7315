@@ -33,4 +33,11 @@ class UnitTests {
         val newPrice = 90.0
         assertTrue(service.validatePriceChange(oldPrice, newPrice))
     }
+
+    @Test
+    fun priceFormat_isCorrectZAR() {
+        val price = 123.456
+        val formatted = service.formatPrice(price)
+        assertEquals("R123.46", formatted)
+    }
 }

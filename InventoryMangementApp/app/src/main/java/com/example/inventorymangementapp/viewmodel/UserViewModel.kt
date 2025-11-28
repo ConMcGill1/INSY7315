@@ -87,4 +87,21 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             userDao.updateAdminStatus(userId, isAdmin)
         }
     }
+
+    fun updateProfile(userId: String, displayName: String?, passwordHash: String?) {
+        viewModelScope.launch {
+            val user = userDao.getUserById(userId)
+            if (user != null) {
+                val updatedUser = user.copy(
+                    displayName = displayName ?: user.displayName,
+                    passwordHash = passwordHash ?: user.passwordHash
+                )
+                userDao.updateUser(updatedUser)
+                // Update current user state if it's the logged in user
+                if (_currentUser.value?.id == userId) {
+                    _currentUser.value = updatedUser
+                }
+            }
+        }
+    }
 }

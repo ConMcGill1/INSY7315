@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 interface UserDao {
     @Query("SELECT * FROM users")
     fun getAllUsers(): Flow<List<User>>
+    
+    @Query("SELECT * FROM users WHERE id = :id")
+    suspend fun getUserById(id: String): User?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: User)

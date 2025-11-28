@@ -1,6 +1,7 @@
 package com.example.inventorymangementapp.service
 
 import com.example.inventorymangementapp.model.Product
+import java.util.Locale
 
 class PriceChangeService {
     // Updated logic: 10% threshold matches the ASP.NET Core summary
@@ -20,6 +21,7 @@ class PriceChangeService {
     }
 
     fun formatPrice(price: Double): String {
-        return String.format("$%.2f", price)
+        // Changed currency symbol from $ to ZAR (R)
+        return String.format(Locale.US, "R%.2f", price)
     }
 }

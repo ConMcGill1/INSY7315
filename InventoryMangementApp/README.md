@@ -25,6 +25,7 @@ The Inventory Management System provides a secure and efficient solution for sma
 *   **Product CRUD**: Add, View, Edit, Delete products with validation.
 *   **Price Change Tracking**: Automatically records price changes in `PriceHistory` table.
 *   **Search & Filter**: Search by Name, Category, or Model.
+*   **Currency**: All monetary values displayed in **ZAR (R)**.
 
 ### Secondary Features
 *   **Reports & Exports**: 
@@ -33,6 +34,7 @@ The Inventory Management System provides a secure and efficient solution for sma
 *   **Price Change Alerts/Validation**: Prevents price increases greater than 10% (aligned with backend rules).
 *   **Alerts System**: Dedicated view for low-stock items (Admin only).
 *   **User Management**: Admin can manage user roles (add/remove admin rights).
+*   **Admin Dashboard**: Visual summary of inventory stats, stock levels, and major price changes.
 
 ## Database Design (SQLite/Room)
 Primary tables:
@@ -68,12 +70,12 @@ Primary tables:
     *   Click "Export Report" or "Export CSV".
     *   **System Picker**: Choose a folder and filename to save the file securely.
 4.  **Admin Actions**:
-    *   Edit Price (restricted field).
-    *   View Alerts.
-    *   Manage Users via top bar menu.
+    *   **Dashboard**: Click the Home/Grid icon to view top stats.
+    *   **Alerts**: View low-stock warnings.
+    *   **Manage Users**: Grant/Revoke admin access via top bar menu.
 
 ## Testing & Quality Assurance
-*   **Unit Testing**: `PriceChangeService` logic verified (10% threshold).
+*   **Unit Testing**: `PriceChangeService` logic verified (10% threshold, ZAR formatting).
 *   **Integration**: Verified Auth flow -> Admin Privileges -> Database Persistence.
 *   **Security**: Restricted "Delete" and "Edit Price" buttons to Admin users only.
 

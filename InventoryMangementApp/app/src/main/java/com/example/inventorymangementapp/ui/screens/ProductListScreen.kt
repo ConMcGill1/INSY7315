@@ -6,7 +6,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -18,6 +20,7 @@ import androidx.navigation.NavController
 import com.example.inventorymangementapp.model.Product
 import com.example.inventorymangementapp.viewmodel.InventoryViewModel
 import com.example.inventorymangementapp.viewmodel.UserViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,19 +49,28 @@ fun ProductListScreen(
                 actions = {
                     // Display current user
                     if (currentUser != null) {
-                        Text(
-                            text = currentUser!!.displayName ?: currentUser!!.email, 
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
+                        TextButton(onClick = { navController.navigate("profile") }) {
+                            Text(
+                                text = currentUser!!.displayName ?: currentUser!!.email, 
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     } else {
                          Text("Guest", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(end = 8.dp))
                     }
                     
-                    // Only admin can see Manage Users
+                    // Only admin can see Manage Users and Dashboard
                     if (isAdmin) {
+                        IconButton(onClick = { navController.navigate("dashboard") }) {
+                            Icon(Icons.Default.Home, contentDescription = "Admin Dashboard")
+                        }
                         TextButton(onClick = { navController.navigate("manageUsers") }) {
                             Text("Users")
+                        }
+                    } else if (currentUser != null) {
+                        // Regular authenticated users can see Profile icon if not clicked on name
+                        IconButton(onClick = { navController.navigate("profile") }) {
+                            Icon(Icons.Default.Person, contentDescription = "Profile")
                         }
                     }
                     
@@ -69,7 +81,7 @@ fun ProductListScreen(
                             popUpTo("productList") { inclusive = true }
                         }
                     }) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Sign Out")
+                        Icon(Icons.Default.Close, contentDescription = "Sign Out")
                     }
                 }
             )
@@ -136,7 +148,8 @@ fun ProductItem(product: Product, onClick: () -> Unit) {
                 if (!product.model.isNullOrBlank()) {
                     Text(text = "Model: ${product.model}", style = MaterialTheme.typography.bodySmall)
                 }
-                Text(text = "Price: $${product.price}", style = MaterialTheme.typography.bodyMedium)
+                // Updated currency to ZAR
+                Text(text = "Price: ${String.format(Locale.US, "R%.2f", product.price)}", style = MaterialTheme.typography.bodyMedium)
                 Text(text = "Qty: ${product.quantity}", style = MaterialTheme.typography.bodyMedium)
             }
             if (product.quantity <= product.lowStockThreshold) {

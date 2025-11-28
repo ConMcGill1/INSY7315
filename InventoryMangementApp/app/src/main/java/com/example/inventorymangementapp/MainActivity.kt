@@ -51,6 +51,12 @@ class MainActivity : ComponentActivity() {
                     composable("manageUsers") {
                         ManageUsersScreen(navController, userViewModel)
                     }
+                    composable("dashboard") {
+                        DashboardScreen(navController, inventoryViewModel)
+                    }
+                    composable("profile") {
+                        ProfileScreen(navController, userViewModel)
+                    }
                 }
             }
         }

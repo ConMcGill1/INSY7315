@@ -48,4 +48,8 @@ interface ProductDao {
 
     @Query("SELECT * FROM price_history WHERE productId = :productId ORDER BY changedDate DESC")
     fun getPriceHistory(productId: Int): Flow<List<PriceHistory>>
+    
+    // Added for Dashboard
+    @Query("SELECT * FROM price_history")
+    fun getAllPriceHistory(): Flow<List<PriceHistory>>
 }

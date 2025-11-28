@@ -83,21 +83,30 @@ fun AddEditProductScreen(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Product Name") },
+                    label = { Text("Name") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Price field - ONLY ADMIN CAN EDIT
+                OutlinedTextField(
+                    value = owner,
+                    onValueChange = { owner = it },
+                    label = { Text("Owner") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Price field - ONLY ADMIN CAN EDIT if updating, but anyone can set initial price
+                val canEditPrice = isAdmin || (productId == null || productId == -1)
                 OutlinedTextField(
                     value = price,
-                    onValueChange = { if (isAdmin) price = it },
+                    onValueChange = { if (canEditPrice) price = it },
                     label = { Text("Price") },
-                    enabled = isAdmin, // Disable for non-admins
+                    enabled = canEditPrice,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth()
                 )
-                if (!isAdmin) {
+                if (!canEditPrice) {
                     Text("Only Admins can change price", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -114,14 +123,6 @@ fun AddEditProductScreen(
                     value = model,
                     onValueChange = { model = it },
                     label = { Text("Model (Optional)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = owner,
-                    onValueChange = { owner = it },
-                    label = { Text("Owner / Changed By") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -157,15 +158,34 @@ fun AddEditProductScreen(
                         val threshVal = lowStockThreshold.toIntOrNull()
 
                         if (name.isNotBlank() && priceVal != null && qtyVal != null && threshVal != null && owner.isNotBlank()) {
-                            if (productId != null && productId != -1) {
-                                // Update Logic
-                                if (isAdmin && !priceChangeService.validatePriceChange(oldPrice, priceVal)) {
-                                    errorMessage = "Invalid price change (>50% increase)."
+                            if (priceVal < 0) {
+                                errorMessage = "Price must be non-negative"
+                            } else {
+                                if (productId != null && productId != -1) {
+                                    // Update Logic
+                                    // Validate price change only if admin is changing it (since only admin CAN change it)
+                                    if (canEditPrice && priceVal != oldPrice && !priceChangeService.validatePriceChange(oldPrice, priceVal)) {
+                                        errorMessage = "Invalid price change (>10% increase)."
+                                    } else {
+                                        // Save
+                                        viewModel.updateProduct(
+                                            Product(
+                                                id = productId,
+                                                name = name,
+                                                price = priceVal,
+                                                quantity = qtyVal,
+                                                lowStockThreshold = threshVal,
+                                                owner = owner,
+                                                model = model,
+                                                category = category
+                                            )
+                                        )
+                                        navController.popBackStack()
+                                    }
                                 } else {
-                                    // Save
-                                    viewModel.updateProduct(
+                                    // Create Logic
+                                    viewModel.addProduct(
                                         Product(
-                                            id = productId,
                                             name = name,
                                             price = priceVal,
                                             quantity = qtyVal,
@@ -177,23 +197,9 @@ fun AddEditProductScreen(
                                     )
                                     navController.popBackStack()
                                 }
-                            } else {
-                                // Create Logic
-                                viewModel.addProduct(
-                                    Product(
-                                        name = name,
-                                        price = priceVal,
-                                        quantity = qtyVal,
-                                        lowStockThreshold = threshVal,
-                                        owner = owner,
-                                        model = model,
-                                        category = category
-                                    )
-                                )
-                                navController.popBackStack()
                             }
                         } else {
-                            errorMessage = "Please fill required fields (Name, Price, Qty, Threshold, Owner)"
+                            errorMessage = "Please fill required fields (Name, Owner, Price, Qty, Threshold)"
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
