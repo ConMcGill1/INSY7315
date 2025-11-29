@@ -251,8 +251,9 @@ fun AddEditProductScreen(
                         val dateFormat = SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault())
                         val dateStr = dateFormat.format(Date(history.changedDate))
                         
+                        // Update to ZAR
                         ListItem(
-                            headlineContent = { Text("New: $${history.newPrice} (was $${history.oldPrice})") },
+                            headlineContent = { Text("New: ${String.format(Locale.US, "R%.2f", history.newPrice)} (was ${String.format(Locale.US, "R%.2f", history.oldPrice)})") },
                             supportingContent = { Text("By ${history.changedBy ?: "Unknown"} on $dateStr") }
                         )
                         HorizontalDivider()

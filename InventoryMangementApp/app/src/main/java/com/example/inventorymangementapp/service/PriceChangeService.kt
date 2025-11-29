@@ -4,7 +4,7 @@ import com.example.inventorymangementapp.model.Product
 import java.util.Locale
 
 class PriceChangeService {
-    // Updated logic: 10% threshold matches the ASP.NET Core summary
+    // Updated logic: 10% threshold or absolute difference of R1000
     fun validatePriceChange(oldPrice: Double, newPrice: Double): Boolean {
         // Prevent price increase of more than 10% at once
         if (oldPrice > 0 && newPrice > oldPrice * 1.10) {
@@ -14,10 +14,15 @@ class PriceChangeService {
     }
     
     fun isSignificantChange(oldPrice: Double, newPrice: Double): Boolean {
-         val threshold = 0.10 // 10%
+         // Significant if > 10% change OR > R1000 difference
+         val thresholdPercent = 0.10 
+         val thresholdAbsolute = 1000.0
+         
          if (oldPrice <= 0) return false
+         
          val change = kotlin.math.abs(newPrice - oldPrice)
-         return change / oldPrice >= threshold
+         
+         return (change / oldPrice >= thresholdPercent) || (change >= thresholdAbsolute)
     }
 
     fun formatPrice(price: Double): String {

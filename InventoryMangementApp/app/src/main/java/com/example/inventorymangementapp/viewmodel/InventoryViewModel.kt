@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.inventorymangementapp.data.AppDatabase
+import com.example.inventorymangementapp.model.Alert
 import com.example.inventorymangementapp.model.PriceHistory
 import com.example.inventorymangementapp.model.Product
 import com.example.inventorymangementapp.service.PriceChangeService
@@ -16,6 +17,24 @@ import kotlinx.coroutines.launch
 
 class InventoryViewModel(application: Application) : AndroidViewModel(application) {
     private val productDao = AppDatabase.getDatabase(application).productDao()
+    // We can also access alertDao if we had one, or insert alerts via Room directly?
+    // Assuming Alert entity exists but we didn't add AlertDao methods yet or we can insert via logic?
+    // Actually AppDatabase has Alert entity. Let's check if we can access it.
+    // But wait, alerts are usually separate. 
+    // The prompt asks "where is the alert for big price change".
+    // We should probably insert an Alert record when a significant price change happens.
+    
+    // For this demo, let's say we generate alerts dynamically or we should persist them.
+    // The Alert entity exists. Let's add insertAlert to DAO or use a separate AlertDao.
+    // ProductDao is currently handling everything. Let's stick to ProductDao for simplicity or check AppDatabase.
+    // AppDatabase has entities [Product, Alert, ...].
+    // We need a way to insert Alert.
+    
+    // Let's add insertAlert to ProductDao for now to avoid creating new file if not needed,
+    // or better, check if we can just use PriceHistory as the "Alert" source (which we do in Dashboard).
+    // BUT "Alerts" screen usually shows "Low Stock".
+    // If user wants "Price Change Alerts" in the "Alerts" screen, we should combine them.
+    
     private val priceChangeService = PriceChangeService()
 
     // --- Search & Filter State ---
@@ -39,6 +58,25 @@ class InventoryViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // Combined Alerts: Low Stock + Significant Price Changes
+    // We'll fetch price history and filter for significant ones to display as "Alerts" alongside low stock.
+    val alerts: Flow<List<AlertItem>> = productDao.getLowStockProducts()
+        .combine(productDao.getAllPriceHistory()) { lowStock, history ->
+            val stockAlerts = lowStock.map { 
+                AlertItem.StockAlert(it)
+            }
+            
+            val priceAlerts = history.filter { 
+                priceChangeService.isSignificantChange(it.oldPrice, it.newPrice)
+            }.sortedByDescending { it.changedDate }.take(20).map { 
+                AlertItem.PriceAlert(it)
+            }
+            
+            stockAlerts + priceAlerts
+        }
+
+    // Keep original lowStockProducts for compatibility if needed, but UI likely uses 'alerts' now?
+    // The original AlertsScreen used 'lowStockProducts'. We should update AlertsScreen to use this new 'alerts' flow.
     val lowStockProducts: Flow<List<Product>> = productDao.getLowStockProducts()
 
     // Dashboard Statistics
@@ -117,3 +155,8 @@ data class DashboardStats(
     val topCategories: List<Map.Entry<String, Int>> = emptyList(),
     val significantPriceChanges: List<PriceHistory> = emptyList()
 )
+
+sealed class AlertItem {
+    data class StockAlert(val product: Product) : AlertItem()
+    data class PriceAlert(val history: PriceHistory) : AlertItem()
+}
