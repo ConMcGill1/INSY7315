@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Inventory Mangement App</string>
+    <string name="title_activity_login">Login</string>
+    <string name="title_activity_product_list">Product List</string>
+    <string name="title_activity_add_edit_product">Product Details</string>
+    <string name="action_save">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="label_username">Username</string>
+    <string name="label_password">Password</string>
+    <string name="btn_login">Login</string>
+    <string name="btn_add_product">Add Product</string>
+    <string name="msg_low_stock">Low Stock Alert</string>
+    <string name="menu_reports">Reports</string>
+    <string name="menu_alerts">Alerts</string>
+</resources>

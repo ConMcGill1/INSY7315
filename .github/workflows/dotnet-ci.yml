@@ -1,0 +1,65 @@
+name: .NET Build, Test (non-blocking), Coverage, Publish
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Set environment to Testing
+        run: |
+          echo "ASPNETCORE_ENVIRONMENT=Testing" >> $GITHUB_ENV
+          echo "DOTNET_ENVIRONMENT=Testing" >> $GITHUB_ENV
+
+      - name: Restore (solution)
+        run: dotnet restore INSY7315.sln
+
+      - name: Verify formatting
+        shell: bash
+        run: |
+          if dotnet format --version >/dev/null 2>&1; then
+            dotnet format INSY7315.sln --verify-no-changes
+          else
+            dotnet tool install -g dotnet-format
+            ~/.dotnet/tools/dotnet-format INSY7315.sln --verify-no-changes
+          fi
+
+      - name: Build 
+        run: dotnet build INSY7315.sln -c Release -p:TreatWarningsAsErrors=true --no-restore
+
+      - name: Test with coverage 
+        continue-on-error: true
+        run: |
+          dotnet test INSY7315.Tests/INSY7315.Tests.csproj             -c Release --no-build             --collect:"XPlat Code Coverage"             --results-directory ./TestResults             --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults
+
+      - name: Vulnerable packages 
+        run: dotnet list INSY7315.sln package --vulnerable --include-transitive
+
+      - name: Publish web app 
+        run: dotnet publish INSY7315/INSY7315.csproj -c Release -o ./publish --no-build
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish
+          path: ./publish
